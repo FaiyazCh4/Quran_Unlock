@@ -1,0 +1,6 @@
+{
+  "name": "Quran Unlock - Spiritual Focus & App Locker",
+  "description": "Transform screen time into Quran time. Lock distracting apps until your daily Quran reading goal is met, with offline audio recitations, Reels mode, daily reminders, and spiritual goal tracker.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
