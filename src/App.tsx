@@ -12,6 +12,8 @@ import { ReelsTab } from './components/ReelsTab';
 import { DhikrTab } from './components/DhikrTab';
 import { TrackerTab } from './components/TrackerTab';
 import { RemindersTab } from './components/RemindersTab';
+import { PrayersTab } from './components/PrayersTab';
+import { DuasTab } from './components/DuasTab';
 import { AppBlockerModal } from './components/AppBlockerModal';
 import { AudioPlayerBar } from './components/AudioPlayerBar';
 import { 
@@ -249,6 +251,10 @@ export default function App() {
           onTogglePlayAudio={handleTogglePlayAudio}
           onOpenReaderTab={() => setCurrentTab('reader')}
           currentTab={currentTab}
+          onToggleShield={handleToggleShield}
+          onToggleAppLock={handleToggleAppLock}
+          onLockImmediately={handleLockImmediately}
+          onUnlockAllApps={handleUnlockAllApps}
         />
 
         {/* Tab Content Body */}
@@ -318,6 +324,10 @@ export default function App() {
             />
           )}
 
+          {currentTab === 'prayer' && <PrayersTab />}
+
+          {currentTab === 'duas' && <DuasTab />}
+
           {currentTab === 'tracker' && (
             <TrackerTab
               goal={spiritualGoal}
@@ -382,7 +392,13 @@ export default function App() {
         {/* iOS Frosted Bottom Navigation */}
         <Navigation
           currentTab={currentTab}
-          onSelectTab={(tab) => setCurrentTab(tab)}
+          onSelectTab={(tab) => {
+            if (tab === currentTab) {
+              const mainEl = document.querySelector('main');
+              if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            setCurrentTab(tab);
+          }}
         />
 
         {/* Interactive iOS App Blocker Modal (Quran Gatekeeper) */}
