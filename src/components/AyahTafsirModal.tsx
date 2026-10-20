@@ -202,8 +202,15 @@ ${tafsir.practicalTakeaways.map((t) => `• ${t}`).join('\n')}
               </p>
             </div>
 
+            {/* Urdu Translation */}
+            {ayah.urduTranslation && (
+              <div dir="rtl" className="pt-2 text-base sm:text-lg text-amber-200 leading-[2.3] border-t border-white/10 font-nastaleeq text-right select-text drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                {ayah.urduTranslation}
+              </div>
+            )}
+
             {/* English Translation */}
-            <div className="pt-2 text-xs sm:text-sm text-stone-200 leading-relaxed border-t border-white/5 font-serif italic">
+            <div className={`pt-2 text-xs sm:text-sm text-stone-100 leading-relaxed ${ayah.urduTranslation ? 'mt-1' : 'border-t border-white/10'} font-sans select-text drop-shadow-sm`}>
               "{ayah.translation}"
             </div>
           </div>
@@ -237,13 +244,18 @@ ${tafsir.practicalTakeaways.map((t) => `• ${t}`).join('\n')}
           {/* Tafsir Content Sections */}
           {tafsir && !isLoading && (
             <div className="space-y-4 animate-fade-in">
-              {/* Section 1: Concise Tafsir */}
-              <div className="p-4 rounded-2xl bg-stone-900/90 border border-stone-800/90 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-amber-300">
-                  <BookOpen className="w-4 h-4 text-amber-400" />
-                  <span>Concise Scholarly Tafsir</span>
+              {/* Section 1: Concise Explanation of the Verse */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-950/30 via-stone-900 to-stone-950 border border-amber-500/40 shadow-lg space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-300">
+                    <BookOpen className="w-4 h-4 text-amber-400" />
+                    <span>Concise Explanation of the Verse</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium">
+                    Tafsir Summary
+                  </span>
                 </div>
-                <p className="text-xs sm:text-sm text-stone-200 leading-relaxed">
+                <p className="text-sm sm:text-base text-stone-100 leading-relaxed font-normal">
                   {tafsir.conciseTafsir}
                 </p>
               </div>

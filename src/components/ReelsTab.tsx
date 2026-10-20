@@ -193,8 +193,14 @@ export const ReelsTab: React.FC<ReelsTabProps> = ({
           </p>
         </div>
 
-        {/* Translation */}
-        <p className="text-sm sm:text-base text-stone-200 font-light leading-relaxed italic px-2">
+        {/* Translations: Urdu in Noori Nastaleeq & English */}
+        {currentReel.urduTranslation && (
+          <p dir="rtl" className="text-lg sm:text-xl text-amber-200 font-nastaleeq leading-[2.3] text-center px-2 drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
+            {currentReel.urduTranslation}
+          </p>
+        )}
+
+        <p className="text-xs sm:text-sm text-stone-200 font-light leading-relaxed italic px-2 drop-shadow-sm">
           "{currentReel.translation}"
         </p>
 

@@ -1,4 +1,4 @@
-import { BlockedApp, UnlockRule, SpiritualGoal, DailyLog, ReadingReminder, Badge, Reciter, DhikrItem } from '../types';
+import { BlockedApp, UnlockRule, SpiritualGoal, DailyLog, ReadingReminder, Badge, Reciter, DhikrItem, FavoriteVerse, HighlightColor } from '../types';
 import { RECITERS } from '../data/quranData';
 import { DEFAULT_DHIKR_ITEMS } from '../data/azkarData';
 
@@ -67,9 +67,16 @@ const KEYS = {
   DHIKR_LAST_DATE: 'qu_dhikr_last_date',
   MUSHAF_PAPER_THEME: 'qu_mushaf_paper_theme',
   AUDIO_PLAYBACK_SPEED: 'qu_audio_playback_speed',
+  TRANSLATION_LANGUAGE: 'qu_translation_language',
+  FAVORITE_VERSES: 'qu_favorite_verses',
+  VERSE_HIGHLIGHTS: 'qu_verse_highlights',
+  FOCUS_READING_MODE: 'qu_focus_reading_mode',
+  GLOBAL_UI_THEME: 'qu_global_ui_theme',
 };
 
 export type MushafTheme = 'cream' | 'warm' | 'night';
+export type TranslationLanguage = 'both' | 'ur' | 'en';
+export type GlobalUITheme = 'light' | 'dark';
 
 export class StorageService {
   static getBlockedApps(): BlockedApp[] {
@@ -505,6 +512,222 @@ export class StorageService {
       localStorage.setItem(KEYS.AUDIO_PLAYBACK_SPEED, clamped.toString());
     } catch (e) {
       console.warn('Error saving playback speed', e);
+    }
+  }
+
+  static getTranslationLanguage(): TranslationLanguage {
+    try {
+      const val = localStorage.getItem(KEYS.TRANSLATION_LANGUAGE);
+      if (val === 'ur' || val === 'en' || val === 'both') {
+        return val;
+      }
+    } catch (e) {
+      console.warn('Error reading translation language', e);
+    }
+    // Default to 'both' or 'ur' so users immediately see Urdu translation
+    return 'both';
+  }
+
+  static saveTranslationLanguage(lang: TranslationLanguage) {
+    try {
+      localStorage.setItem(KEYS.TRANSLATION_LANGUAGE, lang);
+    } catch (e) {
+      console.warn('Error saving translation language', e);
+    }
+  }
+
+  // Favorite Verses Management
+  static getFavoriteVerses(): FavoriteVerse[] {
+    try {
+      const data = localStorage.getItem(KEYS.FAVORITE_VERSES);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Error reading favorite verses', e);
+    }
+    return [];
+  }
+
+  static saveFavoriteVerses(favorites: FavoriteVerse[]): void {
+    try {
+      localStorage.setItem(KEYS.FAVORITE_VERSES, JSON.stringify(favorites));
+    } catch (e) {
+      console.warn('Error saving favorite verses', e);
+    }
+  }
+
+  static toggleFavoriteVerse(verse: Omit<FavoriteVerse, 'id' | 'savedAt'> & { id?: string; savedAt?: number }): { isFavorite: boolean; favorites: FavoriteVerse[] } {
+    const favorites = this.getFavoriteVerses();
+    const verseId = verse.id || `${verse.surahNumber}:${verse.ayahNumberInSurah}`;
+    const existingIndex = favorites.findIndex((f) => f.id === verseId || (f.surahNumber === verse.surahNumber && f.ayahNumberInSurah === verse.ayahNumberInSurah));
+    
+    let updated: FavoriteVerse[];
+    let isFavorite: boolean;
+
+    if (existingIndex >= 0) {
+      updated = favorites.filter((_, idx) => idx !== existingIndex);
+      isFavorite = false;
+    } else {
+      const newFav: FavoriteVerse = {
+        ...verse,
+        id: verseId,
+        savedAt: verse.savedAt || Date.now(),
+      };
+      updated = [newFav, ...favorites];
+      isFavorite = true;
+    }
+
+    this.saveFavoriteVerses(updated);
+    return { isFavorite, favorites: updated };
+  }
+
+  static isAyahFavorite(surahNumber: number, ayahNumberInSurah: number): boolean {
+    const favorites = this.getFavoriteVerses();
+    return favorites.some((f) => f.surahNumber === surahNumber && f.ayahNumberInSurah === ayahNumberInSurah);
+  }
+
+  static removeFavoriteVerse(id: string): FavoriteVerse[] {
+    const favorites = this.getFavoriteVerses();
+    const updated = favorites.filter((f) => f.id !== id);
+    this.saveFavoriteVerses(updated);
+    return updated;
+  }
+
+  static updateFavoriteNote(id: string, note: string): FavoriteVerse[] {
+    const favorites = this.getFavoriteVerses();
+    const updated = favorites.map((f) => f.id === id ? { ...f, note } : f);
+    this.saveFavoriteVerses(updated);
+    return updated;
+  }
+
+  // Persistent Verse Highlights (key format: "surahNumber:ayahNumberInSurah")
+  static getVerseHighlights(): Record<string, HighlightColor> {
+    try {
+      const data = localStorage.getItem(KEYS.VERSE_HIGHLIGHTS);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } catch (e) {
+      console.warn('Error reading verse highlights', e);
+    }
+    return {};
+  }
+
+  static saveVerseHighlights(highlights: Record<string, HighlightColor>): void {
+    try {
+      localStorage.setItem(KEYS.VERSE_HIGHLIGHTS, JSON.stringify(highlights));
+    } catch (e) {
+      console.warn('Error saving verse highlights', e);
+    }
+  }
+
+  static getAyahHighlight(surahNumber: number, ayahNumberInSurah: number): HighlightColor | undefined {
+    const highlights = this.getVerseHighlights();
+    return highlights[`${surahNumber}:${ayahNumberInSurah}`];
+  }
+
+  static setVerseHighlight(
+    surahNumber: number, 
+    ayahNumberInSurah: number, 
+    color?: HighlightColor
+  ): Record<string, HighlightColor> {
+    const highlights = this.getVerseHighlights();
+    const key = `${surahNumber}:${ayahNumberInSurah}`;
+    const updated = { ...highlights };
+    
+    if (color) {
+      updated[key] = color;
+    } else {
+      delete updated[key];
+    }
+    
+    this.saveVerseHighlights(updated);
+    return updated;
+  }
+
+  static isFocusReadingMode(): boolean {
+    try {
+      return localStorage.getItem(KEYS.FOCUS_READING_MODE) === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  static setFocusReadingMode(enabled: boolean): void {
+    try {
+      localStorage.setItem(KEYS.FOCUS_READING_MODE, String(enabled));
+    } catch (e) {
+      console.warn('Error saving focus reading mode', e);
+    }
+  }
+
+  static getGlobalUITheme(): GlobalUITheme {
+    try {
+      const val = localStorage.getItem(KEYS.GLOBAL_UI_THEME);
+      if (val === 'light' || val === 'dark') return val;
+    } catch (e) {
+      console.warn('Error reading global theme', e);
+    }
+    return 'dark'; // default to night/dark theme
+  }
+
+  static applyGlobalTheme(theme: GlobalUITheme): void {
+    if (typeof document === 'undefined') return;
+
+    const root = document.documentElement;
+    const body = document.body;
+
+    if (theme === 'light') {
+      body.classList.remove('theme-dark', 'dark');
+      body.classList.add('theme-light', 'theme-parchment');
+      root.classList.remove('dark');
+      root.classList.add('light');
+
+      // Set CSS variables for light (parchment) theme
+      root.style.setProperty('--bg-app', '#fbf7ee');
+      root.style.setProperty('--bg-shell', '#f4ebd9');
+      root.style.setProperty('--bg-card', 'rgba(255, 252, 245, 0.95)');
+      root.style.setProperty('--bg-card-hover', '#ffffff');
+      root.style.setProperty('--text-primary', '#1c1917');
+      root.style.setProperty('--text-secondary', '#57534e');
+      root.style.setProperty('--text-muted', '#78716c');
+      root.style.setProperty('--border-subtle', 'rgba(180, 140, 80, 0.25)');
+      root.style.setProperty('--border-card', 'rgba(180, 140, 80, 0.35)');
+      root.style.setProperty('--accent-glow', 'rgba(217, 119, 6, 0.15)');
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute('content', '#fbf7ee');
+    } else {
+      body.classList.remove('theme-light', 'theme-parchment');
+      body.classList.add('theme-dark', 'dark');
+      root.classList.remove('light');
+      root.classList.add('dark');
+
+      // Set CSS variables for dark (night) theme
+      root.style.setProperty('--bg-app', '#0c0a09');
+      root.style.setProperty('--bg-shell', '#120f0d');
+      root.style.setProperty('--bg-card', 'rgba(28, 25, 23, 0.85)');
+      root.style.setProperty('--bg-card-hover', 'rgba(41, 37, 36, 0.9)');
+      root.style.setProperty('--text-primary', '#f5f5f4');
+      root.style.setProperty('--text-secondary', '#a8a29e');
+      root.style.setProperty('--text-muted', '#78716c');
+      root.style.setProperty('--border-subtle', 'rgba(255, 255, 255, 0.08)');
+      root.style.setProperty('--border-card', 'rgba(255, 255, 255, 0.1)');
+      root.style.setProperty('--accent-glow', 'rgba(16, 185, 129, 0.15)');
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute('content', '#0c0a09');
+    }
+  }
+
+  static saveGlobalUITheme(theme: GlobalUITheme): void {
+    try {
+      localStorage.setItem(KEYS.GLOBAL_UI_THEME, theme);
+      this.applyGlobalTheme(theme);
+    } catch (e) {
+      console.warn('Error saving global theme', e);
     }
   }
 }

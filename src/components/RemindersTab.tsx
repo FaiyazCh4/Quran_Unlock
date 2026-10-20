@@ -17,11 +17,12 @@ import {
   Sparkles,
   Info
 } from 'lucide-react';
-import { ReadingReminder, Reciter } from '../types';
+import { ReadingReminder, Reciter, GlobalUITheme } from '../types';
 import { RECITERS } from '../data/quranData';
 import { PrayerService } from '../services/prayerService';
 import { NotificationService } from '../services/notificationService';
 import { OFFLINE_AZKAR } from '../data/azkarData';
+import { StorageService } from '../services/storageService';
 
 interface RemindersTabProps {
   reminders: ReadingReminder[];
@@ -30,6 +31,8 @@ interface RemindersTabProps {
   onChangeReciter: (reciter: Reciter) => void;
   downloadedSurahsCount: number;
   onDownloadAllEssential: () => void;
+  globalTheme?: GlobalUITheme;
+  onChangeGlobalTheme?: (theme: GlobalUITheme) => void;
 }
 
 export const RemindersTab: React.FC<RemindersTabProps> = ({
@@ -39,7 +42,20 @@ export const RemindersTab: React.FC<RemindersTabProps> = ({
   onChangeReciter,
   downloadedSurahsCount,
   onDownloadAllEssential,
+  globalTheme,
+  onChangeGlobalTheme,
 }) => {
+  const [localTheme, setLocalTheme] = useState<GlobalUITheme>(() => globalTheme || StorageService.getGlobalUITheme());
+  const activeTheme = globalTheme || localTheme;
+
+  const handleThemeChange = (newTheme: GlobalUITheme) => {
+    setLocalTheme(newTheme);
+    StorageService.saveGlobalUITheme(newTheme);
+    if (onChangeGlobalTheme) {
+      onChangeGlobalTheme(newTheme);
+    }
+  };
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newTime, setNewTime] = useState('07:30');
@@ -114,6 +130,168 @@ export const RemindersTab: React.FC<RemindersTabProps> = ({
         <p className="text-xs text-stone-400">
           Set custom reading schedules, sync with prayers, and manage offline Quran recitations.
         </p>
+      </div>
+
+      {/* Global UI Theme Switcher (Light Parchment vs Dark Night) */}
+      <div className="ios-glass-card rounded-3xl p-5 border border-stone-800 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {activeTheme === 'light' ? (
+              <Sun className="w-4 h-4 text-amber-500" />
+            ) : (
+              <Moon className="w-4 h-4 text-emerald-400" />
+            )}
+            <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+              Display & UI Theme
+            </h2>
+          </div>
+          <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold transition-all ${
+            activeTheme === 'light' 
+              ? 'bg-amber-500/20 text-amber-700 border border-amber-500/30' 
+              : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+          }`}>
+            {activeTheme === 'light' ? 'Light (Parchment)' : 'Dark (Night)'}
+          </span>
+        </div>
+
+        <p className="text-xs text-stone-300 leading-relaxed">
+          Switch the app-wide reading atmosphere between authentic Medina ivory parchment and deep night mode.
+        </p>
+
+        {/* 2-Card Visual Theme Toggle */}
+        <div className="grid grid-cols-2 gap-2.5">
+          {/* Light Parchment Option */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('light')}
+            className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all duration-200 active:scale-[0.98] cursor-pointer ${
+              activeTheme === 'light'
+                ? 'bg-amber-100/90 border-amber-500/80 shadow-md ring-2 ring-amber-400/40 text-stone-900'
+                : 'bg-stone-900/60 border-stone-800 hover:border-stone-700 text-stone-300'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-xs ${
+                  activeTheme === 'light'
+                    ? 'bg-amber-200 border-amber-300 text-amber-800'
+                    : 'bg-stone-800 border-stone-700 text-amber-400'
+                }`}>
+                  <Sun className="w-4 h-4 stroke-[2.2]" />
+                </div>
+                <div>
+                  <div className={`font-bold text-xs ${activeTheme === 'light' ? 'text-stone-900' : 'text-stone-100'}`}>
+                    Light Parchment
+                  </div>
+                  <div className={`text-[10px] ${activeTheme === 'light' ? 'text-amber-800/80' : 'text-amber-400/80'}`}>
+                    Medina Paper
+                  </div>
+                </div>
+              </div>
+              {activeTheme === 'light' && (
+                <div className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5 w-full">
+              {/* Visual preview swatch */}
+              <div className="h-4 w-full rounded-md bg-[#fbf7ee] border border-amber-300/60 flex items-center px-1.5 justify-between">
+                <span className="h-1.5 w-6 rounded-full bg-stone-700/60" />
+                <span className="h-1.5 w-2 rounded-full bg-amber-600/70" />
+              </div>
+              <p className={`text-[10px] leading-tight ${activeTheme === 'light' ? 'text-stone-600' : 'text-stone-400'}`}>
+                Soft ivory parchment and warm gold tones for daytime recitation.
+              </p>
+            </div>
+          </button>
+
+          {/* Dark Night Option */}
+          <button
+            type="button"
+            onClick={() => handleThemeChange('dark')}
+            className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all duration-200 active:scale-[0.98] cursor-pointer ${
+              activeTheme === 'dark'
+                ? 'bg-stone-900 border-emerald-500/80 shadow-md ring-2 ring-emerald-500/30 text-white'
+                : 'bg-stone-900/60 border-stone-800 hover:border-stone-700 text-stone-300'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-xs ${
+                  activeTheme === 'dark'
+                    ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-400'
+                    : 'bg-stone-800 border-stone-700 text-stone-400'
+                }`}>
+                  <Moon className="w-4 h-4 stroke-[2.2]" />
+                </div>
+                <div>
+                  <div className="font-bold text-xs text-white">
+                    Dark Night
+                  </div>
+                  <div className="text-[10px] text-emerald-400/80">
+                    Obsidian Night
+                  </div>
+                </div>
+              </div>
+              {activeTheme === 'dark' && (
+                <div className="w-5 h-5 rounded-full bg-emerald-500 text-stone-950 flex items-center justify-center shrink-0 shadow-xs">
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5 w-full">
+              {/* Visual preview swatch */}
+              <div className="h-4 w-full rounded-md bg-[#0c0a09] border border-stone-700 flex items-center px-1.5 justify-between">
+                <span className="h-1.5 w-6 rounded-full bg-stone-300/70" />
+                <span className="h-1.5 w-2 rounded-full bg-emerald-400/80" />
+              </div>
+              <p className="text-[10px] text-stone-400 leading-tight">
+                High-contrast deep black and emerald glow for nighttime focus.
+              </p>
+            </div>
+          </button>
+        </div>
+
+        {/* Quick Toggle Switch Bar */}
+        <div className="pt-1 flex items-center justify-between p-3 rounded-2xl bg-stone-900/50 border border-stone-800">
+          <div className="flex items-center gap-2.5">
+            <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${activeTheme === 'light' ? 'text-amber-600 bg-amber-500/15' : 'text-emerald-400 bg-emerald-500/15'}`}>
+              {activeTheme === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-white">
+                Quick Toggle Theme
+              </div>
+              <div className="text-[10px] text-stone-400">
+                Currently in {activeTheme === 'light' ? 'Light (Parchment)' : 'Dark (Night)'} mode
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleThemeChange(activeTheme === 'light' ? 'dark' : 'light')}
+            className={`w-12 h-6 rounded-full transition-colors relative p-0.5 cursor-pointer ${
+              activeTheme === 'light' ? 'bg-amber-500' : 'bg-emerald-500'
+            }`}
+            aria-label="Toggle global theme"
+          >
+            <div
+              className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform flex items-center justify-center ${
+                activeTheme === 'dark' ? 'translate-x-6' : 'translate-x-0'
+              }`}
+            >
+              {activeTheme === 'light' ? (
+                <Sun className="w-3 h-3 text-amber-600 stroke-[2.5]" />
+              ) : (
+                <Moon className="w-3 h-3 text-stone-900 stroke-[2.5]" />
+              )}
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Customizable Daily Reading Reminders */}

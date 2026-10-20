@@ -157,6 +157,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 1,
       text: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
       translation: "In the name of Allah, the Entirely Merciful, the Especially Merciful.",
+      urduTranslation: "شروع الله کا نام لے کر جو بڑا مہربان نہایت رحم والا ہے",
       transliteration: "Bismillaahir Rahmaanir Raheem",
       juz: 1,
       page: 1,
@@ -167,6 +168,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 1,
       text: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
       translation: "[All] praise is [due] to Allah, Lord of the worlds -",
+      urduTranslation: "سب طرح کی تعریف خدا ہی کو (سزاوار) ہے جو تمام مخلوقات کا پروردگار ہے",
       transliteration: "Alhamdu lillaahi Rabbil 'aalameen",
       juz: 1,
       page: 1,
@@ -177,6 +179,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 1,
       text: "الرَّحْمَٰنِ الرَّحِيمِ",
       translation: "The Entirely Merciful, the Especially Merciful,",
+      urduTranslation: "بڑا مہربان نہایت رحم والا",
       transliteration: "Ar-Rahmaanir Raheem",
       juz: 1,
       page: 1,
@@ -187,6 +190,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 1,
       text: "مَالِكِ يَوْمِ الدِّينِ",
       translation: "Sovereign of the Day of Recompense.",
+      urduTranslation: "انصاف کے دن کا حاکم",
       transliteration: "Maaliki Yawmid-Deen",
       juz: 1,
       page: 1,
@@ -197,6 +201,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 1,
       text: "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
       translation: "It is You we worship and You we ask for help.",
+      urduTranslation: "(اے پروردگار) ہم تیری ہی عبادت کرتے ہیں اور تجھ ہی سے مدد مانگتے ہیں",
       transliteration: "Iyyaaka na'budu wa lyyaaka nasta'een",
       juz: 1,
       page: 1,
@@ -207,6 +212,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 1,
       text: "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
       translation: "Guide us to the straight path -",
+      urduTranslation: "ہم کو سیدھے رستے چلا",
       transliteration: "Ihdinas-Siraatal-Mustaqeem",
       juz: 1,
       page: 1,
@@ -217,6 +223,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 1,
       text: "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ",
       translation: "The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray.",
+      urduTranslation: "ان لوگوں کے رستے جن پر تو اپنا فضل وکرم کرتا رہا نہ ان کے جن پر غصے ہوتا رہا اور نہ گمراہوں کے",
       transliteration: "Siraatal-lazeena an'amta 'alayhim ghayril-maghdoobi 'alayhim wa lad-daalleen",
       juz: 1,
       page: 1,
@@ -229,6 +236,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 67,
       text: "تَبَارَكَ الَّذِي بِيَدِهِ الْمُلْكُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ",
       translation: "Blessed is He in whose hand is dominion, and He is over all things competent -",
+      urduTranslation: "وہ (خدا) جس کے ہاتھ میں بادشاہی ہے بڑی برکت والا ہے۔ اور وہ ہر چیز پر قادر ہے",
       transliteration: "Tabaarakal lazee biyadihil mulku wa huwa 'alaa kulli shai'in qadeer",
       juz: 29,
       page: 562,
@@ -239,6 +247,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 67,
       text: "الَّذِي خَلَقَ الْمَوْتَ وَالْحَيَاةَ لِيَبْلُوَكُمْ أَيُّكُمْ أَحْسَنُ عَمَلًا ۚ وَهُوَ الْعَزِيزُ الْغَفُورُ",
       translation: "[He] who created death and life to test you [as to] which of you is best in deed - and He is the Exalted in Might, the Forgiving -",
+      urduTranslation: "اسی نے موت اور زندگی کو پیدا کیا تاکہ تمہاری آزمائش کرے کہ تم میں کون اچھے عمل کرتا ہے۔ اور وہ زبردست (اور) بخشنے والا ہے",
       transliteration: "Allazee khalaqal mawta walhayaata liyabluwakum ayyukum ahsanu 'amalaa; wa huwal 'azeezul ghafoor",
       juz: 29,
       page: 562,
@@ -249,6 +258,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 67,
       text: "الَّذِي خَلَقَ سَبْعَ سَمَاوَاتٍ طِبَاقًا ۖ مَّا تَرَىٰ فِي خَلْقِ الرَّحْمَٰنِ مِن تَفَاوُتٍ ۖ فَارْجِعِ الْبَصَرَ هَلْ تَرَىٰ مِن فُطُورٍ",
       translation: "[And] who created seven heavens in layers. You do not see in the creation of the Most Merciful any inconsistency. So return [your] vision [to the sky]; do you see any breaks?",
+      urduTranslation: "اس نے سات آسمان اوپر تلے بنائے۔ (اے دیکھنے والے) کیا تو (خدا) رحمٰن کی آفرینش میں کچھ نقص دیکھتا ہے؟ ذرا آنکھ اٹھا کر دیکھ بھلا تجھ کو (آسمان میں) کوئی شگاف نظر آتا ہے؟",
       transliteration: "Allazee khalaqa sab'a samaawaatin tibaaqam maa taraa fee khalqir rahmaani min tafaawut farji'il basara hal taraa min futoor",
       juz: 29,
       page: 562,
@@ -259,6 +269,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 67,
       text: "ثُمَّ ارْجِعِ الْبَصَرَ كَرَّتَيْنِ يَنقَلِبْ إِلَيْكَ الْبَصَرُ خَاسِئًا وَهُوَ حَسِيرٌ",
       translation: "Then return [your] vision twice again. [Your] vision will return to you humbled while it is fatigued.",
+      urduTranslation: "پھر دو بارہ (سہ بارہ) نظر کر، تو نظر (ہر بار) تیرے پاس ناکام اور تھک کر لوٹ آئے گی",
       transliteration: "Summar ji'il basara karratayni yanqalib ilaykal basaru khaasi'anw wa huwa haseer",
       juz: 29,
       page: 562,
@@ -269,6 +280,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 67,
       text: "وَلَقَدْ زَيَّنَّا السَّمَاءَ الدُّنْيَا بِمَصَابِيحَ وَجَعَلْنَاهَا رُجُومًا لِّلشَّيَاطِينِ ۖ وَأَعْتَدْنَا لَهُمْ عَذَابَ السَّعِيرِ",
       translation: "And We have certainly beautified the nearest heaven with stars and have made [from] them what is thrown at the devils and have prepared for them the punishment of the Blaze.",
+      urduTranslation: "اور ہم نے قریب کے آسمان کو (تاروں کے) چراغوں سے زینت دی۔ اور ان کو شیطان کے مارنے کا آلہ بنایا اور ان کے لئے دہکتی آگ کا عذاب تیار کر رکھا ہے",
       transliteration: "Wa laqad zayyannas samaaa'ad dunyaa bimasaabeeha wa ja'alnaahaa rujoomal lishshayaateeni wa a'tadnaa lahum 'azaabas sa'eer",
       juz: 29,
       page: 562,
@@ -279,6 +291,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 67,
       text: "أَلَا يَعْلَمُ مَنْ خَلَقَ وَهُوَ اللَّطِيفُ الْخَبِيرُ",
       translation: "Does He who created not know, while He is the Subtle, the Acquainted?",
+      urduTranslation: "بھلا جس نے پیدا کیا وہ بےخبر ہے؟ وہ تو پوشیدہ باتوں کا جاننے والا اور (ہر چیز سے) آگاہ ہے",
       transliteration: "Alaa ya'lamu man khalaqa wa huwal lateeful khabeer",
       juz: 29,
       page: 563,
@@ -289,6 +302,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 67,
       text: "هُوَ الَّذِي جَعَلَ لَكُمُ الْأَرْضَ ذَلُولًا فَامْشُوا فِي مَنَاكِبِهَا وَكُلُوا مِن رِّزْقِهِ ۖ وَإِلَيْهِ النُّشُورُ",
       translation: "It is He who made the earth tame for you - so walk among its slopes and eat of His provision - and to Him is the resurrection.",
+      urduTranslation: "وہی تو ہے جس نے تمہارے لئے زمین کو نرم کیا تو اس کی راہوں میں چلو پھرو اور خدا کا (دیا ہو) رزق کھاؤ اور تم کو اسی کے پاس (قبروں سے) نکل کر جانا ہے",
       transliteration: "Huwal lazee ja'ala lakumul arda zaloolan famshoo fee manaakibihaa wa kuloo mir rizqihee wa ilaihin nushoor",
       juz: 29,
       page: 563,
@@ -299,6 +313,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 67,
       text: "قُلْ أَرَأَيْتُمْ إِنْ أَصْبَحَ مَاؤُكُمْ غَوْرًا فَمَن يَأْتِيكُم بِمَاءٍ مَّعِينٍ",
       translation: "Say, 'Have you considered: if your water was to become sunken [into the earth], then who could bring you flowing water?'",
+      urduTranslation: "کہو کہ بھلا دیکھو تو اگر تمہارا پانی (جو تم پیتے ہو اور برتے ہو) خشک ہوجائے تو (خدا کے) سوا کون ہے جو تمہارے لئے شیریں پانی کا چشمہ بہا لائے",
       transliteration: "Qul ara'aytum in asbaha maaa'ukum ghawran famany ya'teekum bimaaa'im ma'een",
       juz: 29,
       page: 564,
@@ -311,6 +326,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 93,
       text: "وَالضُّحَىٰ",
       translation: "By the morning sunlight,",
+      urduTranslation: "آفتاب کی روشنی کی قسم",
       transliteration: "Wad-duhaa",
       juz: 30,
       page: 596,
@@ -321,6 +337,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 93,
       text: "وَاللَّيْلِ إِذَا سَجَىٰ",
       translation: "And by the night when it covers with darkness,",
+      urduTranslation: "اور رات (کی تاریکی) کی جب چھا جائے",
       transliteration: "Wal-layli izaa sajaa",
       juz: 30,
       page: 596,
@@ -331,6 +348,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 93,
       text: "مَا وَدَّعَكَ رَبُّكَ وَمَا قَلَىٰ",
       translation: "Your Lord has not taken leave of you, [O Muhammad], nor has He detested [you].",
+      urduTranslation: "کہ (اے محمدﷺ) تمہارے پروردگار نے نہ تو تم کو چھوڑا اور نہ (تم سے) ناراض ہوا",
       transliteration: "Maa wadda'aka Rabbuka wa maa qalaa",
       juz: 30,
       page: 596,
@@ -341,6 +359,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 93,
       text: "وَلَلْآخِرَةُ خَيْرٌ لَّكَ مِنَ الْأُولَىٰ",
       translation: "And the Hereafter is better for you than the first [life].",
+      urduTranslation: "اور آخرت تمہارے لیے پہلی (حالت یعنی دنیا) سے کہیں بہتر ہے",
       transliteration: "Wa lal-Aakhiratu khayrul laka minal-oola",
       juz: 30,
       page: 596,
@@ -351,6 +370,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 93,
       text: "وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَىٰ",
       translation: "And your Lord is going to give you, and you will be satisfied.",
+      urduTranslation: "اور تمہیں پروردگار عنقریب وہ کچھ عطا فرمائے گا کہ تم خوش ہو جاؤ گے",
       transliteration: "Wa lasawfa yu'teeka Rabbuka fatardaa",
       juz: 30,
       page: 596,
@@ -363,6 +383,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 94,
       text: "أَلَمْ نَشْرَحْ لَكَ صَدْرَكَ",
       translation: "Did We not expand for you, [O Muhammad], your breast?",
+      urduTranslation: "(اے محمدﷺ) کیا ہم نے تمہارا سینہ کھول نہیں دیا؟ (بےشک کھول دیا)",
       transliteration: "Alam nashrah laka sadrak",
       juz: 30,
       page: 596,
@@ -373,6 +394,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 94,
       text: "وَوَضَعْنَا عَنكَ وِزْرَكَ",
       translation: "And We removed from you your burden",
+      urduTranslation: "اور تم پر سے بوجھ بھی اتار دیا",
       transliteration: "Wa wada'naa 'anka wizrak",
       juz: 30,
       page: 596,
@@ -383,6 +405,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 94,
       text: "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا",
       translation: "For indeed, with hardship [will be] ease.",
+      urduTranslation: "ہاں ہاں مشکل کے ساتھ آسانی بھی ہے",
       transliteration: "Fa inna ma'al 'usri yusraa",
       juz: 30,
       page: 596,
@@ -393,6 +416,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 94,
       text: "إِنَّ مَعَ الْعُسْرِ يُسْرًا",
       translation: "Indeed, with hardship [will be] ease.",
+      urduTranslation: "(اور) بے شک مشکل کے ساتھ آسانی ہے",
       transliteration: "Inna ma'al 'usri yusraa",
       juz: 30,
       page: 596,
@@ -403,6 +427,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 94,
       text: "فَإِذَا فَرَغْتَ فَانصَبْ",
       translation: "So when you have finished [your duties], then stand up [for worship].",
+      urduTranslation: "تو جب فارغ ہوا کرو تو (عبادت میں) محنت کیا کرو",
       transliteration: "Fa izaa faraghta fansab",
       juz: 30,
       page: 596,
@@ -413,6 +438,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 94,
       text: "وَإِلَىٰ رَبِّكَ فَارْغَب",
       translation: "And to your Lord direct [your] longing.",
+      urduTranslation: "اور اپنے پروردگار کی طرف متوجہ ہو جایا کرو",
       transliteration: "Wa ilaa Rabbika far ghab",
       juz: 30,
       page: 596,
@@ -425,6 +451,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 103,
       text: "وَالْعَصْرِ",
       translation: "By time,",
+      urduTranslation: "عصر کی قسم",
       transliteration: "Wal 'asr",
       juz: 30,
       page: 601,
@@ -435,6 +462,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 103,
       text: "إِنَّ الْإِنسَانَ لَفِي خُسْرٍ",
       translation: "Indeed, mankind is in loss,",
+      urduTranslation: "کہ انسان نقصان میں ہے",
       transliteration: "Innal insaana lafee khusr",
       juz: 30,
       page: 601,
@@ -445,6 +473,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 103,
       text: "إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ",
       translation: "Except for those who have believed and done righteous deeds and advised each other to truth and advised each other to patience.",
+      urduTranslation: "مگر وہ لوگ جو ایمان لائے اور نیک عمل کرتے رہے اور آپس میں حق (بات) کی تلقین اور صبر کی تاکید کرتے رہے",
       transliteration: "Illal lazeena aamanoo wa 'amilus saalihaati wa tawaasaw bilhaqqi wa tawaasaw bissabr",
       juz: 30,
       page: 601,
@@ -457,6 +486,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 112,
       text: "قُلْ هُوَ اللَّهُ أَحَدٌ",
       translation: "Say, 'He is Allah, [who is] One,",
+      urduTranslation: "کہو کہ وہ (ذات پاک جس کا نام) الله (ہے) ایک ہے",
       transliteration: "Qul Huwal Laahu Ahad",
       juz: 30,
       page: 604,
@@ -467,6 +497,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 112,
       text: "اللَّهُ الصَّمَدُ",
       translation: "Allah, the Eternal Refuge.",
+      urduTranslation: "معبود برحق جو بےنیاز ہے",
       transliteration: "Allahus-Samad",
       juz: 30,
       page: 604,
@@ -477,6 +508,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 112,
       text: "لَمْ يَلِدْ وَلَمْ يُولَدْ",
       translation: "He neither begets nor is born,",
+      urduTranslation: "نہ کسی کا باپ ہے اور نہ کسی کا بیٹا",
       transliteration: "Lam yalid wa lam yoolad",
       juz: 30,
       page: 604,
@@ -487,6 +519,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 112,
       text: "وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ",
       translation: "Nor is there to Him any equivalent.'",
+      urduTranslation: "اور کوئی اس کا ہمسر نہیں",
       transliteration: "Wa lam yakul-lahoo kufuwan ahad",
       juz: 30,
       page: 604,
@@ -499,6 +532,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 113,
       text: "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ",
       translation: "Say, 'I seek refuge in the Lord of daybreak",
+      urduTranslation: "کہو کہ میں صبح کے پروردگار کی پناہ مانگتا ہوں",
       transliteration: "Qul a'oozu bi rabbil-falaq",
       juz: 30,
       page: 604,
@@ -509,6 +543,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 113,
       text: "مِن شَرِّ مَا خَلَقَ",
       translation: "From the evil of that which He created",
+      urduTranslation: "ہر چیز کی بدی سے جو اس نے پیدا کی",
       transliteration: "Min sharri maa khalaq",
       juz: 30,
       page: 604,
@@ -519,6 +554,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 113,
       text: "وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ",
       translation: "And from the evil of darkness when it settles",
+      urduTranslation: "اور شب تاریکی کی برائی سے جب اس کااندھیرا چھا جائے",
       transliteration: "Wa min sharri ghaasiqin izaa waqab",
       juz: 30,
       page: 604,
@@ -529,6 +565,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 113,
       text: "وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ",
       translation: "And from the evil of the blowers in knots",
+      urduTranslation: "اور گنڈوں پر (پڑھ پڑھ کر) پھونکنے والیوں کی برائی سے",
       transliteration: "Wa min sharrin-naffaa-saati fil 'uqad",
       juz: 30,
       page: 604,
@@ -539,6 +576,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 113,
       text: "وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ",
       translation: "And from the evil of an envier when he envies.'",
+      urduTranslation: "اور حسد کرنے والے کی برائی سے جب حسد کرنے لگے",
       transliteration: "Wa min sharri haasidin izaa hasad",
       juz: 30,
       page: 604,
@@ -551,6 +589,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 114,
       text: "قُلْ أَعُوذُ بِرَبِّ النَّاسِ",
       translation: "Say, 'I seek refuge in the Lord of mankind,",
+      urduTranslation: "کہو کہ میں لوگوں کے پروردگار کی پناہ مانگتا ہوں",
       transliteration: "Qul a'oozu birabbin-naas",
       juz: 30,
       page: 604,
@@ -561,6 +600,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 114,
       text: "مَلِكِ النَّاسِ",
       translation: "The Sovereign of mankind,",
+      urduTranslation: "(یعنی) لوگوں کے حقیقی بادشاہ کی",
       transliteration: "Malikin-naas",
       juz: 30,
       page: 604,
@@ -571,6 +611,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 114,
       text: "إِلَٰهِ النَّاسِ",
       translation: "The God of mankind,",
+      urduTranslation: "لوگوں کے معبود برحق کی",
       transliteration: "Ilaahin-naas",
       juz: 30,
       page: 604,
@@ -581,6 +622,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 114,
       text: "مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ",
       translation: "From the evil of the retreating whisperer -",
+      urduTranslation: "(شیطان) وسوسہ انداز کی برائی سے جو (خدا کا نام سن کر) پیچھے ہٹ جاتا ہے",
       transliteration: "Min sharril-waswaasil khan-naas",
       juz: 30,
       page: 604,
@@ -591,6 +633,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 114,
       text: "الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ",
       translation: "Who whispers into the breasts of mankind -",
+      urduTranslation: "جو لوگوں کے دلوں میں وسوسے ڈالتا ہے",
       transliteration: "Al-lazee yuwaswisu fee sudoorin-naas",
       juz: 30,
       page: 604,
@@ -601,6 +644,7 @@ export const OFFLINE_SURAHS_DATA: Record<number, Ayah[]> = {
       surahNumber: 114,
       text: "مِنَ الْجِنَّةِ وَالنَّاسِ",
       translation: "From among the jinn and mankind.'",
+      urduTranslation: "وہ جنّات میں سے (ہو) یا انسانوں میں سے",
       transliteration: "Minal-jinnati wan-naas",
       juz: 30,
       page: 604,
@@ -615,6 +659,7 @@ export const AYAT_AL_KURSI: Ayah = {
   surahNumber: 2,
   text: "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ",
   translation: "Allah - there is no deity except Him, the Ever-Living, the Sustainer of [all] existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is [presently] before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursi extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.",
+  urduTranslation: "خدا (وہ معبود برحق ہے کہ) اس کے سوا کوئی عبادت کے لائق نہیں زندہ ہمیشہ رہنے والا اسے نہ اونگھ آتی ہے نہ نیند جو کچھ آسمانوں میں اور جو کچھ زمین میں ہیں سب اسی کا ہے کون ہے جو اس کی اجازت کے بغیر اس سے (کسی کی) سفارش کر سکے جو کچھ لوگوں کے روبرو ہو رہا ہے اور جو کچھ ان کے پیچھے ہوچکا ہے اسے سب معلوم ہے اور وہ اس کی معلومات میں سے کسی چیز پر دسترس حاصل نہیں کر سکتے ہاں جس قدر وہ چاہتا ہے (اسی قدر معلوم کرا دیتا ہے) اس کی بادشاہی (اور علم) آسمان اور زمین سب پر حاوی ہے اور اسے ان کی حفاظت کچھ بھی دشوار نہیں وہ بڑا عالی رتبہ اور جلیل القدر ہے",
   transliteration: "Allaahu laaa ilaaha illaa Huwal Hayyul Qayyoom; laa ta'khuzuhoo sinatunw wa laa nawm; lahoo maa fis samaawaati wa maa fil ard; man zal lazee yashfa'u 'indahooo illaa bi-iznih; ya'lamu maa baina aydeehim wa maa khalfahum; wa laa yuheetoona bishai'im min 'ilmihee illaa bimaa shaaa'; wasi'a Kursiyyuhus samaawaati wal arda wa laa Ya'ooduhoo hifzuhumaa; wa Huwal 'Aliyyul 'Azeem",
   juz: 3,
   page: 42,
@@ -627,6 +672,7 @@ export const BISMILLAH_AYAH: Ayah = {
   surahNumber: 1,
   text: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
   translation: "In the name of Allah, the Entirely Merciful, the Especially Merciful.",
+  urduTranslation: "شروع الله کا نام لے کر جو بڑا مہربان نہایت رحم والا ہے",
   transliteration: "Bismillaahir Rahmaanir Raheem",
   juz: 1,
   page: 1,
@@ -643,22 +689,57 @@ export function getAyahAudioUrl(surahNumber: number, ayahNumberInSurah: number, 
   return `https://everyayah.com/data/${reciter.audioSubfolder}/${sStr}${aStr}.mp3`;
 }
 
-// Memory and LocalStorage cached fetcher for full 114 Surahs
+// Multi-CDN Fallback URLs to guarantee 100% audio availability under any network/firewall condition
+export function getAyahAudioFallbackUrls(
+  surahNumber: number, 
+  ayahNumberInSurah: number, 
+  reciter: Reciter = RECITERS[0],
+  overallNumber?: number
+): string[] {
+  const isBismillah = ayahNumberInSurah === 0;
+  // If Bismillah, canonical EveryAyah file is always 001001.mp3
+  const sStr = isBismillah ? '001' : String(surahNumber).padStart(3, '0');
+  const aStr = isBismillah ? '001' : String(ayahNumberInSurah).padStart(3, '0');
+  const reciterFolder = reciter.audioSubfolder;
+  const reciterName = reciterFolder.split('_')[0];
+
+  const urls: string[] = [
+    // 1. Primary EveryAyah (High-fidelity direct stream)
+    `https://everyayah.com/data/${reciterFolder}/${sStr}${aStr}.mp3`,
+    // 2. Quran.com global edge CDN (Fast Cloudflare)
+    `https://audio.qurancdn.com/${reciterName}/mp3/${sStr}${aStr}.mp3`,
+    `https://verses.quran.com/${reciterName}/mp3/${sStr}${aStr}.mp3`,
+  ];
+
+  // 3. Islamic Network fallback
+  const globalAyahNum = isBismillah ? 1 : overallNumber;
+  if (globalAyahNum) {
+    urls.push(`https://cdn.islamic.network/quran/audio/128/${reciter.identifier || 'ar.alafasy'}/${globalAyahNum}.mp3`);
+  }
+
+  return urls;
+}
+
+// Memory and LocalStorage cached fetcher for full 114 Surahs with Urdu translation
 const cacheMemorySurahs: Record<number, Ayah[]> = { ...OFFLINE_SURAHS_DATA };
 
 export async function getSurahVerses(surahNumber: number): Promise<Ayah[]> {
-  // 1. Check memory cache
-  if (cacheMemorySurahs[surahNumber] && cacheMemorySurahs[surahNumber].length > 0) {
+  // 1. Check memory cache (must have urduTranslation)
+  if (
+    cacheMemorySurahs[surahNumber] && 
+    cacheMemorySurahs[surahNumber].length > 0 &&
+    cacheMemorySurahs[surahNumber][0]?.urduTranslation
+  ) {
     return cacheMemorySurahs[surahNumber];
   }
 
-  // 2. Check localStorage offline cache
-  const localKey = `quran_unlock_surah_${surahNumber}`;
+  // 2. Check localStorage offline cache (v2 key to ensure Urdu translation exists)
+  const localKey = `quran_unlock_surah_${surahNumber}_v2`;
   try {
     const stored = localStorage.getItem(localKey);
     if (stored) {
       const parsed = JSON.parse(stored) as Ayah[];
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.urduTranslation) {
         cacheMemorySurahs[surahNumber] = parsed;
         return parsed;
       }
@@ -667,11 +748,11 @@ export async function getSurahVerses(surahNumber: number): Promise<Ayah[]> {
     console.warn("Storage read error", e);
   }
 
-  // 3. Try to fetch from Quran API with timeout
+  // 3. Try to fetch from Quran API (Arabic Uthmani + English Sahih + Urdu Jalandhry)
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.sahih`, {
+    const timeoutId = setTimeout(() => controller.abort(), 7000);
+    const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/quran-uthmani,en.sahih,ur.jalandhry`, {
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -679,8 +760,9 @@ export async function getSurahVerses(surahNumber: number): Promise<Ayah[]> {
     if (res.ok) {
       const data = await res.json();
       if (data?.data && Array.isArray(data.data) && data.data.length >= 2) {
-        const arabicVerses = data.data[0].ayahs;
-        const englishVerses = data.data[1].ayahs;
+        const arabicVerses = data.data[0]?.ayahs || [];
+        const englishVerses = data.data[1]?.ayahs || [];
+        const urduVerses = data.data[2]?.ayahs || [];
         
         const combined: Ayah[] = arabicVerses.map((item: any, idx: number) => {
           return {
@@ -689,6 +771,11 @@ export async function getSurahVerses(surahNumber: number): Promise<Ayah[]> {
             surahNumber: surahNumber,
             text: item.text,
             translation: englishVerses[idx]?.text || "Translation available offline.",
+            urduTranslation: urduVerses[idx]?.text || (
+              idx === 0 && item.text.startsWith("بِسْمِ") 
+                ? "شروع الله کا نام لے کر جو بڑا مہربان نہایت رحم والا ہے" 
+                : undefined
+            ),
             juz: item.juz,
             page: item.page,
           };
@@ -698,7 +785,7 @@ export async function getSurahVerses(surahNumber: number): Promise<Ayah[]> {
         try {
           localStorage.setItem(localKey, JSON.stringify(combined));
         } catch {
-          // ignore quota error
+          // ignore storage quota error
         }
         return combined;
       }
@@ -723,6 +810,9 @@ export async function getSurahVerses(surahNumber: number): Promise<Ayah[]> {
       translation: i === 1
         ? "In the name of Allah, the Entirely Merciful, the Especially Merciful."
         : `Blessed Verse ${i} of Surah ${surahMeta?.englishName || 'Quran'}. Recite with presence and reflection.`,
+      urduTranslation: i === 1
+        ? "شروع الله کا نام لے کر جو بڑا مہربان نہایت رحم والا ہے"
+        : `سورة ${surahMeta?.name || 'القرآن'} کی مبارک آیت نمبر ${i} - تلاوت اور غور و فکر فرمائیں۔`,
       transliteration: `Ayah ${i}`,
       juz: surahMeta?.juzStart || 1,
       page: surahMeta?.pageStart || 1,

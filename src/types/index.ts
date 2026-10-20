@@ -14,12 +14,32 @@ export interface Ayah {
   numberInSurah: number;
   text: string; // Arabic text
   translation: string;
+  urduTranslation?: string;
   transliteration?: string;
   audio?: string;
   tafsir?: string;
   juz?: number;
   page?: number;
   surahNumber: number;
+  highlightColor?: HighlightColor;
+}
+
+export type HighlightColor = 'amber' | 'emerald' | 'rose' | 'sky' | 'purple';
+
+export interface FavoriteVerse {
+  id: string; // `${surahNumber}:${numberInSurah}`
+  surahNumber: number;
+  surahName: string;
+  surahEnglishName: string;
+  ayahNumberInSurah: number;
+  ayahNumber: number;
+  arabicText: string;
+  translation: string;
+  urduTranslation?: string;
+  highlightColor?: HighlightColor;
+  highlightedText?: string;
+  note?: string;
+  savedAt: number;
 }
 
 export interface AyahTafsir {
@@ -123,6 +143,7 @@ export interface ReelItem {
   ayahNumber: number;
   arabicText: string;
   translation: string;
+  urduTranslation?: string;
   theme: string;
   reciterName: string;
   audioUrl: string;
@@ -136,6 +157,7 @@ export interface WisdomItem {
   type: 'verse' | 'hadith';
   arabicText: string;
   translation: string;
+  urduTranslation?: string;
   source: string;
   narratorOrSurah: string;
   surahNumber?: number;
@@ -145,3 +167,34 @@ export interface WisdomItem {
   virtueHighlight?: string;
   audioUrl?: string;
 }
+
+export type PrayerKey = 'fajr' | 'sunrise' | 'dhuhr' | 'asr' | 'maghrib' | 'isha' | 'qiyam';
+
+export interface PrayerTimeItem {
+  id: PrayerKey;
+  name: string;
+  arabicName: string;
+  time: string; // "HH:MM" (24-hr)
+  formattedTime: string; // "5:14 AM"
+  timestamp: number;
+  description: string;
+  rakahs?: string;
+  isPassed: boolean;
+  isNext: boolean;
+  minutesRemaining?: number;
+  dateStr: string; // "YYYY-MM-DD"
+}
+
+export interface PrayerNotificationSettings {
+  masterEnabled: boolean;
+  reminderLeadMinutes: number; // 0, 5, 10, 15, or 30 mins
+  playAdhanSound: boolean;
+  enabledPrayers: Record<PrayerKey, boolean>;
+  selectedCity: string;
+  selectedCalculationMethod: string;
+  lastNotifiedPrayerId?: string;
+  lastNotifiedDate?: string;
+}
+
+export type GlobalUITheme = 'light' | 'dark';
+

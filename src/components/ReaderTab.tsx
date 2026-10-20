@@ -11,17 +11,29 @@ import {
   Check, 
   SlidersHorizontal, 
   ChevronRight, 
+  ChevronDown,
+  ChevronUp,
   Sparkles,
   Layers,
   Copy,
-  Radio
+  Radio,
+  ExternalLink,
+  X,
+  Star,
+  Highlighter,
+  Palette,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
-import { Surah, Ayah, Reciter } from '../types';
+import { Surah, Ayah, Reciter, AyahTafsir, FavoriteVerse, HighlightColor } from '../types';
 import { SURAHS_LIST, getSurahVerses, BISMILLAH_AYAH } from '../data/quranData';
-import { StorageService, MushafTheme } from '../services/storageService';
+import { StorageService, MushafTheme, TranslationLanguage } from '../services/storageService';
 import { AyahTafsirModal } from './AyahTafsirModal';
+import { TafsirService } from '../services/tafsirService';
 import { splitQuranWords, getWordTimings, getActiveWordIndex } from '../services/quranWordService';
 import { MushafCornerFlourish } from './MushafCornerFlourish';
+import { FavoriteVersesModal } from './FavoriteVersesModal';
+import { TextSelectionToolbar } from './TextSelectionToolbar';
 
 export type PaperTextureStyle = MushafTheme;
 
@@ -38,6 +50,8 @@ interface ReaderTabProps {
   audioCurrentTime?: number;
   audioDuration?: number;
   onSeekWord?: (progressRatio: number) => void;
+  isFocusReadingMode?: boolean;
+  onToggleFocusReadingMode?: (enabled: boolean) => void;
 }
 
 export const ReaderTab: React.FC<ReaderTabProps> = ({
@@ -53,7 +67,29 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
   audioCurrentTime = 0,
   audioDuration = 0,
   onSeekWord,
+  isFocusReadingMode,
+  onToggleFocusReadingMode,
 }) => {
+  const [localFocusReadingMode, setLocalFocusReadingMode] = useState<boolean>(() => StorageService.isFocusReadingMode());
+  const focusReadingActive = isFocusReadingMode !== undefined ? isFocusReadingMode : localFocusReadingMode;
+
+  const handleToggleFocusReading = (val?: boolean) => {
+    const nextVal = val !== undefined ? val : !focusReadingActive;
+    setLocalFocusReadingMode(nextVal);
+    StorageService.setFocusReadingMode(nextVal);
+    onToggleFocusReadingMode?.(nextVal);
+  };
+
+  // Keyboard shortcut: Press Escape to exit focus mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && focusReadingActive) {
+        handleToggleFocusReading(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [focusReadingActive]);
   const [activeSurahNumber, setActiveSurahNumber] = useState<number | null>(null);
   const [verses, setVerses] = useState<Ayah[]>([]);
   const [isLoadingVerses, setIsLoadingVerses] = useState(false);
@@ -68,7 +104,7 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
   const [viewStyle, setViewStyle] = useState<'ayah_list' | 'mushaf_page'>('ayah_list');
   const [copiedAyah, setCopiedAyah] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
-  const [focusModeEnabled, setFocusModeEnabled] = useState(true);
+  const [focusModeEnabled, setFocusModeEnabled] = useState(false);
   const [wordHighlightEnabled, setWordHighlightEnabled] = useState(true);
   const [startWithBismillah, setStartWithBismillah] = useState(true);
   const [paperTheme, setPaperTheme] = useState<MushafTheme>(() => StorageService.getMushafTheme());
@@ -77,9 +113,157 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
     setPaperTheme(theme);
     StorageService.saveMushafTheme(theme);
   };
+
+  const [translationLang, setTranslationLang] = useState<TranslationLanguage>(() => StorageService.getTranslationLanguage());
+
+  const handleSetTranslationLang = (lang: TranslationLanguage) => {
+    setTranslationLang(lang);
+    StorageService.saveTranslationLanguage(lang);
+  };
   const [tafsirModalOpen, setTafsirModalOpen] = useState(false);
   const [selectedTafsirAyah, setSelectedTafsirAyah] = useState<Ayah | null>(null);
+  const [expandedTafsirAyah, setExpandedTafsirAyah] = useState<number | null>(null);
+  const [inlineTafsirMap, setInlineTafsirMap] = useState<Record<number, { loading: boolean; data: AyahTafsir | null; error: string | null }>>({});
   const activeAyahRef = useRef<HTMLDivElement | null>(null);
+
+  // Favorite Verses & Highlighting States
+  const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
+  const [favoriteVerses, setFavoriteVerses] = useState<FavoriteVerse[]>(() => StorageService.getFavoriteVerses());
+  const [verseHighlights, setVerseHighlights] = useState<Record<string, HighlightColor>>(() => StorageService.getVerseHighlights());
+  const [selectionToolbar, setSelectionToolbar] = useState<{
+    position: { top: number; left: number } | null;
+    selectedText: string;
+    associatedAyah: Ayah | null;
+  }>({
+    position: null,
+    selectedText: '',
+    associatedAyah: null,
+  });
+  const [activeHighlightPickerAyah, setActiveHighlightPickerAyah] = useState<number | null>(null);
+
+  const handleToggleFavoriteAyah = (ayah: Ayah, customColor?: HighlightColor) => {
+    const surahNum = activeSurahMeta?.number || ayah.surahNumber || activeSurahNumber || 1;
+    const surahName = activeSurahMeta?.name || 'القرآن';
+    const surahEnglishName = activeSurahMeta?.englishName || 'Surah';
+
+    const currentHighlight = verseHighlights[`${surahNum}:${ayah.numberInSurah}`] || customColor;
+
+    const result = StorageService.toggleFavoriteVerse({
+      surahNumber: surahNum,
+      surahName: surahName,
+      surahEnglishName: surahEnglishName,
+      ayahNumberInSurah: ayah.numberInSurah,
+      ayahNumber: ayah.number || ayah.numberInSurah,
+      arabicText: ayah.text,
+      translation: ayah.translation,
+      urduTranslation: ayah.urduTranslation,
+      highlightColor: currentHighlight,
+    });
+
+    setFavoriteVerses(result.favorites);
+  };
+
+  const handleSetAyahHighlight = (surahNum: number, ayahNum: number, color?: HighlightColor) => {
+    const updated = StorageService.setVerseHighlight(surahNum, ayahNum, color);
+    setVerseHighlights(updated);
+
+    const fav = favoriteVerses.find((f) => f.surahNumber === surahNum && f.ayahNumberInSurah === ayahNum);
+    if (fav) {
+      const updatedFavorites = favoriteVerses.map((f) => 
+        f.surahNumber === surahNum && f.ayahNumberInSurah === ayahNum
+          ? { ...f, highlightColor: color }
+          : f
+      );
+      StorageService.saveFavoriteVerses(updatedFavorites);
+      setFavoriteVerses(updatedFavorites);
+    }
+  };
+
+  const handleTextSelection = (e: React.MouseEvent | React.TouchEvent, ayah: Ayah) => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
+
+    const text = selection.toString().trim();
+    if (text.length > 0) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setSelectionToolbar({
+          position: {
+            top: rect.top - 10,
+            left: rect.left + rect.width / 2,
+          },
+          selectedText: text,
+          associatedAyah: ayah,
+        });
+      }
+    }
+  };
+
+  const handleSelectFavoriteVerse = (surahNumber: number, ayahNumberInSurah: number) => {
+    setActiveSurahNumber(surahNumber);
+    setTimeout(() => {
+      const el = document.getElementById(`ayah-${ayahNumberInSurah}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 400);
+  };
+
+  const handleOpenTafsir = (ayah: Ayah) => {
+    setSelectedTafsirAyah(ayah);
+    setTafsirModalOpen(true);
+  };
+
+  const handleToggleInlineTafsir = async (ayah: Ayah) => {
+    const ayahNum = ayah.numberInSurah;
+    if (expandedTafsirAyah === ayahNum) {
+      setExpandedTafsirAyah(null);
+      return;
+    }
+    setExpandedTafsirAyah(ayahNum);
+
+    if (inlineTafsirMap[ayahNum]?.data) {
+      return;
+    }
+
+    const surahNum = activeSurahMeta?.number || ayah.surahNumber || activeSurahNumber || 1;
+    const surahName = activeSurahMeta?.englishName || 'Surah';
+
+    const cached = TafsirService.getCachedTafsir(surahNum, ayahNum);
+    if (cached) {
+      setInlineTafsirMap((prev) => ({
+        ...prev,
+        [ayahNum]: { loading: false, data: cached, error: null },
+      }));
+      return;
+    }
+
+    setInlineTafsirMap((prev) => ({
+      ...prev,
+      [ayahNum]: { loading: true, data: null, error: null },
+    }));
+
+    try {
+      const data = await TafsirService.fetchTafsir(surahNum, surahName, ayah);
+      setInlineTafsirMap((prev) => ({
+        ...prev,
+        [ayahNum]: { loading: false, data, error: null },
+      }));
+    } catch (err: any) {
+      setInlineTafsirMap((prev) => ({
+        ...prev,
+        [ayahNum]: { loading: false, data: null, error: err?.message || 'Failed to load concise explanation' },
+      }));
+    }
+  };
+
+  // If a Surah is reciting and no active surah is opened yet, automatically display that Surah
+  useEffect(() => {
+    if (currentPlayingAyah?.surahNumber && !activeSurahNumber) {
+      setActiveSurahNumber(currentPlayingAyah.surahNumber);
+    }
+  }, [currentPlayingAyah?.surahNumber, activeSurahNumber]);
 
   // Smoothly auto-scroll to the active reciting Ayah
   useEffect(() => {
@@ -89,7 +273,7 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
           behavior: 'smooth',
           block: 'center',
         });
-      }, 100);
+      }, 120);
       return () => clearTimeout(timer);
     }
   }, [currentPlayingAyah?.numberInSurah, currentPlayingAyah?.surahNumber, isPlaying, activeSurahNumber]);
@@ -149,11 +333,6 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
     navigator.clipboard?.writeText(text);
     setCopiedAyah(ayah.numberInSurah);
     setTimeout(() => setCopiedAyah(null), 1800);
-  };
-
-  const handleOpenTafsir = (ayah: Ayah) => {
-    setSelectedTafsirAyah(ayah);
-    setTafsirModalOpen(true);
   };
 
   const handleNavigateTafsirAyah = (step: -1 | 1) => {
@@ -225,6 +404,24 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
               {/* Right Quick Controls */}
               <div className="flex items-center gap-1 shrink-0">
                 <button
+                  onClick={() => setFavoritesModalOpen(true)}
+                  className={`p-1.5 rounded-lg border transition text-[11px] px-2 flex items-center gap-1.5 active:scale-95 ${
+                    favoriteVerses.length > 0
+                      ? 'bg-amber-400/15 border-amber-400/40 text-amber-300 font-bold shadow-xs'
+                      : 'bg-stone-900/70 border-stone-800 text-stone-300 hover:text-amber-300'
+                  }`}
+                  title="Saved Favorite Verses"
+                >
+                  <Star className={`w-3.5 h-3.5 ${favoriteVerses.length > 0 ? 'text-amber-400 fill-amber-400' : 'text-stone-400'}`} />
+                  <span className="hidden sm:inline">Favorites</span>
+                  {favoriteVerses.length > 0 && (
+                    <span className="w-4 h-4 rounded-full bg-amber-400 text-stone-950 text-[9px] font-black flex items-center justify-center">
+                      {favoriteVerses.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
                   onClick={() => onToggleBookmark(activeSurahMeta.number)}
                   className="p-1.5 rounded-lg bg-stone-900/70 border border-stone-800 text-stone-300 hover:text-amber-400 transition"
                   title="Bookmark Surah"
@@ -273,12 +470,96 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                 >
                   {viewStyle === 'ayah_list' ? 'Mushaf' : 'List'}
                 </button>
+
+                {/* Focus Reading Mode Toggle (Hides navigation & audio bars) */}
+                <button
+                  onClick={() => handleToggleFocusReading()}
+                  className={`p-1.5 rounded-lg border transition text-[11px] px-2 flex items-center gap-1 active:scale-95 cursor-pointer ${
+                    focusReadingActive
+                      ? 'bg-emerald-500 text-stone-950 border-emerald-400 font-bold shadow-md shadow-emerald-500/25 ring-2 ring-emerald-400/40'
+                      : 'bg-stone-900/70 border-stone-800 text-stone-300 hover:text-emerald-400'
+                  }`}
+                  title={focusReadingActive ? "Focus Reading Active: navigation and audio bars are hidden (Click to restore)" : "Focus Reading Mode: hides navigation and audio bars for distraction-free reading"}
+                >
+                  {focusReadingActive ? (
+                    <>
+                      <Minimize2 className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline font-bold">Focus ON</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="hidden sm:inline">Focus</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* Secondary Reading Controls Strip: Focus, Word Highlight, Bismillah & AI Tafsir */}
+            {/* Secondary Reading Controls Strip: Focus Reading, Word Highlight, Bismillah & Translation Language */}
             <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-white/5 overflow-x-auto no-scrollbar text-xs">
               <div className="flex items-center gap-1.5">
+                {/* Translation Language Switcher (Urdu / Both / English) */}
+                <div className="flex items-center rounded-lg bg-stone-900/90 p-0.5 border border-emerald-500/30 text-[10px] shrink-0 font-medium shadow-xs">
+                  <button
+                    onClick={() => handleSetTranslationLang('ur')}
+                    className={`px-2 py-0.5 rounded-md transition cursor-pointer ${
+                      translationLang === 'ur'
+                        ? 'bg-emerald-500 text-stone-950 font-bold shadow-xs'
+                        : 'text-stone-300 hover:text-white'
+                    }`}
+                    title="اردو ترجمہ (Urdu translation only)"
+                  >
+                    اردو
+                  </button>
+                  <button
+                    onClick={() => handleSetTranslationLang('both')}
+                    className={`px-2 py-0.5 rounded-md transition cursor-pointer ${
+                      translationLang === 'both'
+                        ? 'bg-emerald-500 text-stone-950 font-bold shadow-xs'
+                        : 'text-stone-300 hover:text-white'
+                    }`}
+                    title="اردو + English (Both translations)"
+                  >
+                    دونوں (Both)
+                  </button>
+                  <button
+                    onClick={() => handleSetTranslationLang('en')}
+                    className={`px-2 py-0.5 rounded-md transition cursor-pointer ${
+                      translationLang === 'en'
+                        ? 'bg-emerald-500 text-stone-950 font-bold shadow-xs'
+                        : 'text-stone-300 hover:text-white'
+                    }`}
+                    title="English translation only"
+                  >
+                    English
+                  </button>
+                </div>
+
+                {/* Focus Reading Mode Toggle (Hides Navigation & Audio Bars) */}
+                <button
+                  onClick={() => handleToggleFocusReading()}
+                  className={`px-2.5 py-1 rounded-lg border transition text-[10px] font-semibold flex items-center gap-1.5 active:scale-95 whitespace-nowrap cursor-pointer ${
+                    focusReadingActive
+                      ? 'bg-emerald-500 text-stone-950 border-emerald-400 font-black shadow-sm ring-1 ring-emerald-400/40'
+                      : 'bg-stone-900/60 text-stone-300 border-stone-800 hover:text-emerald-400 hover:border-emerald-500/40'
+                  }`}
+                  title={focusReadingActive ? "Focus Reading Mode Active: Navigation & Audio bars are hidden (Click to exit)" : "Enable Focus Reading Mode: hides navigation & audio bars for distraction-free reading"}
+                >
+                  {focusReadingActive ? (
+                    <>
+                      <Minimize2 className="w-3 h-3 text-stone-950" />
+                      <span>Focus Reading (ON)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="w-3 h-3 text-emerald-400" />
+                      <span>Focus Reading</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Verse Spotlight Toggle */}
                 <button
                   onClick={() => setFocusModeEnabled(!focusModeEnabled)}
                   className={`px-2 py-1 rounded-lg border transition text-[10px] font-medium flex items-center gap-1 active:scale-95 whitespace-nowrap ${
@@ -286,10 +567,10 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-xs'
                       : 'bg-stone-900/50 text-stone-400 border-stone-800'
                   }`}
-                  title={focusModeEnabled ? "Focus Mode ON" : "Focus Mode OFF"}
+                  title={focusModeEnabled ? "Verse Spotlight ON (dims other verses while reciting)" : "Verse Spotlight OFF"}
                 >
                   <Sparkles className="w-3 h-3 text-amber-400" />
-                  <span>Focus</span>
+                  <span>Spotlight</span>
                 </button>
 
                 <button
@@ -515,7 +796,7 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                               ? 'bg-gradient-to-br from-amber-950/60 via-emerald-950/80 to-stone-900 border-2 border-amber-400 ring-4 ring-amber-400/25 shadow-[0_0_45px_rgba(251,191,36,0.3)] scale-[1.01] z-10 opacity-100 text-stone-100'
                               : 'bg-stone-900/95 border-2 border-emerald-500/70 ring-2 ring-emerald-500/20 shadow-xl opacity-100 text-stone-100'
                             : shouldDimBismillah
-                            ? 'opacity-30 grayscale-[30%] hover:opacity-85 scale-[0.99] border-stone-800/40 ios-glass-card'
+                            ? 'opacity-85 hover:opacity-100 scale-[0.99] border-stone-800/60 ios-glass-card'
                             : paperTheme === 'cream'
                             ? 'mushaf-parchment-cream border-2 border-amber-600/35 ring-1 ring-amber-500/25 text-stone-900 shadow-xl'
                             : paperTheme === 'warm'
@@ -548,11 +829,11 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                                 };
                                 handleOpenTafsir(bismillahAyahData);
                               }}
-                              className="p-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs flex items-center gap-1 active:scale-95 transition"
-                              title="View Bismillah Tafsir (Gemini AI)"
+                              className="px-2.5 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-200 border border-purple-500/35 text-xs flex items-center gap-1.5 active:scale-95 transition font-semibold cursor-pointer"
+                              title="View concise explanation & Tafsir of Bismillah"
                             >
-                              <Sparkles className="w-3 h-3 text-purple-400" />
-                              <span className="text-[10px] font-medium hidden xs:inline">Tafsir</span>
+                              <BookOpen className="w-3.5 h-3.5 text-purple-300" />
+                              <span>View Tafsir</span>
                             </button>
                             <button
                               onClick={() => {
@@ -639,11 +920,28 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                             })()}/4</span>
                           </div>
                         )}
-                        <p className={`text-xs italic mt-1 font-serif ${
-                          paperTheme === 'cream' || paperTheme === 'warm' ? 'text-stone-700' : 'text-stone-300'
-                        }`}>
-                          "In the name of Allah, the Entirely Merciful, the Especially Merciful."
-                        </p>
+                        {(translationLang === 'ur' || translationLang === 'both') && (
+                          <p dir="rtl" className={`text-base sm:text-lg font-nastaleeq mt-1.5 text-center leading-[2.3] ${
+                            isBismillahActive
+                              ? 'text-amber-300 font-bold drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]'
+                              : paperTheme === 'night' || (paperTheme !== 'cream' && paperTheme !== 'warm')
+                              ? 'text-amber-100 font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]'
+                              : 'text-stone-950 font-bold'
+                          }`}>
+                            شروع الله کا نام لے کر جو بڑا مہربان نہایت رحم والا ہے
+                          </p>
+                        )}
+                        {(translationLang === 'en' || translationLang === 'both') && (
+                          <p className={`text-xs sm:text-sm mt-1 font-serif text-center ${
+                            isBismillahActive
+                              ? 'text-white font-medium not-italic drop-shadow-sm'
+                              : paperTheme === 'night' || (paperTheme !== 'cream' && paperTheme !== 'warm')
+                              ? 'text-stone-100 font-normal not-italic drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]'
+                              : 'text-stone-800 font-medium'
+                          }`}>
+                            "In the name of Allah, the Entirely Merciful, the Especially Merciful."
+                          </p>
+                        )}
                         <p className={`text-[11px] font-mono mt-0.5 ${
                           paperTheme === 'cream' || paperTheme === 'warm' ? 'text-amber-900/70 font-medium' : 'text-stone-500'
                         }`}>
@@ -664,23 +962,45 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                   );
                   const isRecitingNow = isThisAyahActive && isPlaying;
                   const shouldDim = isAnyAyahReciting && focusModeEnabled && !isThisAyahActive;
+                  const surahNum = activeSurahMeta.number;
+                  const ayahHighlightColor = verseHighlights[`${surahNum}:${ayah.numberInSurah}`];
+                  const isFav = favoriteVerses.some((f) => f.surahNumber === surahNum && f.ayahNumberInSurah === ayah.numberInSurah);
+                  const highlightClass = ayahHighlightColor
+                    ? (paperTheme === 'cream' || paperTheme === 'warm'
+                        ? `parchment-highlight-${ayahHighlightColor}`
+                        : `ayah-highlight-${ayahHighlightColor}`)
+                    : '';
 
                   return (
                     <div
                       key={ayah.numberInSurah}
+                      id={`ayah-${ayah.numberInSurah}`}
+                      data-ayah-num={ayah.numberInSurah}
                       ref={isThisAyahActive ? activeAyahRef : undefined}
-                      className={`rounded-3xl p-4 sm:p-5 transition-all duration-500 relative overflow-hidden ${
+                      className={`rounded-3xl p-4 sm:p-5 transition-all duration-500 relative overflow-hidden ${highlightClass} ${
                         isThisAyahActive
                           ? isRecitingNow
                             ? 'bg-gradient-to-br from-amber-950/50 via-emerald-950/80 to-stone-900 border-2 border-amber-400 border-l-[8px] border-l-amber-400 ring-4 ring-amber-400/25 shadow-[0_0_45px_rgba(251,191,36,0.25)] scale-[1.01] z-10 opacity-100'
                             : 'bg-stone-900/95 border-2 border-emerald-500/70 border-l-[8px] border-l-emerald-500 ring-2 ring-emerald-500/20 shadow-xl opacity-100'
                           : shouldDim
-                          ? 'opacity-25 grayscale-[30%] hover:opacity-85 scale-[0.99] border-stone-800/40 ios-glass-card'
+                          ? paperTheme === 'cream'
+                            ? 'opacity-90 scale-[0.99] mushaf-parchment-cream border border-amber-600/30 text-stone-900'
+                            : paperTheme === 'warm'
+                            ? 'opacity-90 scale-[0.99] mushaf-parchment-warm border border-amber-700/30 text-amber-950'
+                            : paperTheme === 'night'
+                            ? 'opacity-90 scale-[0.99] mushaf-parchment-night border border-amber-500/30 text-amber-100'
+                            : 'opacity-90 scale-[0.99] border-stone-800/60 ios-glass-card'
+                          : paperTheme === 'cream'
+                          ? 'mushaf-parchment-cream border-2 border-amber-600/25 text-stone-900 shadow-md'
+                          : paperTheme === 'warm'
+                          ? 'mushaf-parchment-warm border-2 border-amber-700/25 text-amber-950 shadow-md'
+                          : paperTheme === 'night'
+                          ? 'mushaf-parchment-night border border-amber-500/30 text-amber-100 shadow-md'
                           : 'ios-glass-card hover:border-stone-700/80 border border-stone-800/80 opacity-100'
                       }`}
                     >
                       {/* Top Status Bar: Ayah Number & Focus Reciting Indicator */}
-                      <div className="flex items-center justify-between pb-3 border-b border-white/5 text-xs text-stone-400">
+                      <div className="flex items-center justify-between pb-3 border-b border-white/5 text-xs text-stone-400 flex-wrap gap-2">
                         <div className="flex items-center gap-2 font-mono">
                           <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs transition ${
                             isThisAyahActive
@@ -718,15 +1038,99 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1 sm:gap-1.5">
+                          {/* View Tafsir button next to each ayah */}
                           <button
-                            onClick={() => handleOpenTafsir(ayah)}
-                            className="p-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:text-purple-200 transition active:scale-95 flex items-center gap-1 shadow-sm"
-                            title="Concise Tafsir & Deeper Meaning (Gemini AI)"
+                            onClick={() => handleToggleInlineTafsir(ayah)}
+                            className={`px-2.5 py-1.5 rounded-xl border transition active:scale-95 flex items-center gap-1.5 font-semibold text-xs cursor-pointer shadow-xs ${
+                              expandedTafsirAyah === ayah.numberInSurah
+                                ? 'bg-purple-600 text-white border-purple-400 shadow-md shadow-purple-600/30 ring-2 ring-purple-400/30'
+                                : paperTheme === 'cream' || paperTheme === 'warm'
+                                ? 'bg-purple-600/10 hover:bg-purple-600/20 border-purple-700/30 text-purple-900'
+                                : 'bg-purple-500/15 hover:bg-purple-500/25 border-purple-500/35 text-purple-200 hover:text-white'
+                            }`}
+                            title={`View concise explanation & Tafsir for Ayah ${ayah.numberInSurah}`}
                           >
-                            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                            <span className="text-[11px] font-semibold hidden sm:inline">Tafsir</span>
+                            <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+                            <span>View Tafsir</span>
+                            {expandedTafsirAyah === ayah.numberInSurah ? (
+                              <ChevronUp className="w-3 h-3 text-purple-200" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3 text-purple-300 opacity-70" />
+                            )}
                           </button>
+
+                          {/* Save / Toggle Favorite Verse Button */}
+                          <button
+                            onClick={() => handleToggleFavoriteAyah(ayah)}
+                            className={`px-2 py-1.5 rounded-xl border transition active:scale-95 flex items-center gap-1 text-xs font-semibold cursor-pointer ${
+                              isFav
+                                ? 'bg-amber-400/25 border-amber-400/60 text-amber-300 shadow-xs ring-1 ring-amber-400/30'
+                                : 'bg-stone-900/60 border-stone-800 text-stone-400 hover:text-amber-300'
+                            }`}
+                            title={isFav ? "Saved in Favorite Verses (Click to remove)" : "Save as Favorite Verse"}
+                          >
+                            <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-400 text-amber-400' : 'text-stone-400'}`} />
+                            <span className="hidden sm:inline">{isFav ? 'Saved' : 'Favorite'}</span>
+                          </button>
+
+                          {/* Highlight Color Palette Picker */}
+                          <div className="relative">
+                            <button
+                              onClick={() => setActiveHighlightPickerAyah(activeHighlightPickerAyah === ayah.numberInSurah ? null : ayah.numberInSurah)}
+                              className={`p-1.5 rounded-xl border transition active:scale-95 flex items-center gap-1 text-xs cursor-pointer ${
+                                ayahHighlightColor
+                                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                                  : 'bg-stone-900/60 border-stone-800 text-stone-400 hover:text-stone-200'
+                              }`}
+                              title={ayahHighlightColor ? `Highlighted in ${ayahHighlightColor} (Click to change)` : "Highlight Verse"}
+                            >
+                              <Highlighter className="w-3.5 h-3.5" />
+                              {ayahHighlightColor && (
+                                <span className={`w-2 h-2 rounded-full ${
+                                  ayahHighlightColor === 'amber' ? 'bg-amber-400' :
+                                  ayahHighlightColor === 'emerald' ? 'bg-emerald-400' :
+                                  ayahHighlightColor === 'rose' ? 'bg-rose-400' :
+                                  ayahHighlightColor === 'sky' ? 'bg-sky-400' : 'bg-purple-400'
+                                }`} />
+                              )}
+                            </button>
+
+                            {/* Dropdown color picker */}
+                            {activeHighlightPickerAyah === ayah.numberInSurah && (
+                              <div className="absolute right-0 top-full mt-1.5 z-40 p-2 rounded-2xl bg-stone-900/95 border border-stone-700 shadow-2xl backdrop-blur-xl flex items-center gap-1.5 animate-fade-in">
+                                {(['amber', 'emerald', 'rose', 'sky', 'purple'] as HighlightColor[]).map((c) => (
+                                  <button
+                                    key={c}
+                                    onClick={() => {
+                                      handleSetAyahHighlight(surahNum, ayah.numberInSurah, c);
+                                      setActiveHighlightPickerAyah(null);
+                                    }}
+                                    className={`w-5 h-5 rounded-full transition-transform hover:scale-125 cursor-pointer ${
+                                      c === 'amber' ? 'bg-amber-400' :
+                                      c === 'emerald' ? 'bg-emerald-400' :
+                                      c === 'rose' ? 'bg-rose-400' :
+                                      c === 'sky' ? 'bg-sky-400' : 'bg-purple-400'
+                                    } ${ayahHighlightColor === c ? 'ring-2 ring-white scale-110' : ''}`}
+                                    title={`Highlight with ${c}`}
+                                  />
+                                ))}
+                                {ayahHighlightColor && (
+                                  <button
+                                    onClick={() => {
+                                      handleSetAyahHighlight(surahNum, ayah.numberInSurah, undefined);
+                                      setActiveHighlightPickerAyah(null);
+                                    }}
+                                    className="text-[10px] text-rose-400 hover:underline px-1 ml-1"
+                                    title="Remove highlight"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
                           <button
                             onClick={() => handlePlayVerse(ayah)}
                             className={`p-2 rounded-xl border transition active:scale-95 ${
@@ -763,7 +1167,9 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                       {/* Arabic Text with authentic Mushaf parchment background & real-time word highlighting in Right-to-Left order */}
                       <div 
                         dir="rtl" 
-                        className={`my-3 p-4 sm:p-5 rounded-2xl text-right rtl-flow transition-all duration-300 relative overflow-hidden ${
+                        onMouseUp={(e) => handleTextSelection(e, ayah)}
+                        onTouchEnd={(e) => handleTextSelection(e, ayah)}
+                        className={`my-3 p-4 sm:p-5 rounded-2xl text-right rtl-flow transition-all duration-300 relative overflow-hidden select-text ${
                           paperTheme === 'cream'
                             ? 'mushaf-text-parchment border border-amber-700/25 shadow-[inset_0_1px_4px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.04)] text-stone-900'
                             : paperTheme === 'warm'
@@ -852,7 +1258,7 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                                 ? 'text-amber-950 font-bold drop-shadow-[0_1px_2px_rgba(245,158,11,0.3)] scale-[1.01]'
                                 : 'text-amber-200 font-bold drop-shadow-[0_0_20px_rgba(251,191,36,0.65)] scale-[1.01]'
                               : shouldDim
-                              ? paperTheme === 'cream' || paperTheme === 'warm' ? 'text-stone-400' : 'text-stone-500'
+                              ? paperTheme === 'cream' ? 'text-stone-800' : paperTheme === 'warm' ? 'text-amber-900' : 'text-stone-200'
                               : paperTheme === 'cream'
                               ? 'text-stone-900 font-semibold drop-shadow-[0_1px_1px_rgba(0,0,0,0.06)]'
                               : paperTheme === 'warm'
@@ -871,12 +1277,62 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                         )}
                       </div>
 
-                      {/* Translation */}
-                      <div className={`pt-2.5 text-xs sm:text-sm leading-relaxed border-t border-white/5 transition-colors ${
-                        isThisAyahActive ? 'text-white font-medium' : shouldDim ? 'text-stone-500' : 'text-stone-300 font-light'
-                      }`}>
-                        {ayah.translation}
-                      </div>
+                      {/* Translation: Urdu (in Noori Nastaleeq) and/or English */}
+                      {(translationLang === 'ur' || translationLang === 'both' || translationLang === 'en') && (
+                        <div 
+                          onMouseUp={(e) => handleTextSelection(e, ayah)}
+                          onTouchEnd={(e) => handleTextSelection(e, ayah)}
+                          className={`mt-3.5 p-3.5 sm:p-4 rounded-2xl transition-all duration-300 ${
+                            paperTheme === 'cream' || paperTheme === 'warm'
+                              ? 'translation-box-light'
+                              : 'translation-box-night'
+                          }`}
+                        >
+                          {/* Urdu Translation in authentic Noori Nastaleeq */}
+                          {(translationLang === 'ur' || translationLang === 'both') && (
+                            <div 
+                              dir="rtl" 
+                              className={`font-nastaleeq text-lg sm:text-xl text-right leading-[2.4] select-text transition-colors ${
+                                isThisAyahActive
+                                  ? 'text-amber-300 font-bold drop-shadow-[0_0_12px_rgba(251,191,36,0.7)]'
+                                  : paperTheme === 'cream' || paperTheme === 'warm'
+                                  ? 'text-stone-950 font-bold'
+                                  : 'text-amber-100 font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]'
+                              }`}
+                            >
+                              {ayah.urduTranslation || (
+                                <span className={`text-xs italic font-sans ${
+                                  paperTheme === 'cream' || paperTheme === 'warm' ? 'text-stone-600' : 'text-amber-300/90'
+                                }`}>
+                                  اردو ترجمہ لوڈ ہو رہا ہے...
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Subtle elegant divider between Urdu and English when both translations are displayed */}
+                          {translationLang === 'both' && (
+                            <div className={`my-2.5 border-t ${
+                              paperTheme === 'cream' || paperTheme === 'warm'
+                                ? 'border-amber-900/15'
+                                : 'border-amber-400/20'
+                            }`} />
+                          )}
+
+                          {/* English Translation */}
+                          {(translationLang === 'en' || translationLang === 'both') && (
+                            <div className={`text-xs sm:text-sm font-sans leading-relaxed select-text transition-colors ${
+                              isThisAyahActive 
+                                ? 'text-white font-medium drop-shadow-sm'
+                                : paperTheme === 'cream' || paperTheme === 'warm'
+                                ? 'text-stone-800 font-medium'
+                                : 'text-stone-100 font-normal drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]'
+                            }`}>
+                              {ayah.translation}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {ayah.transliteration && (
                         <div className={`mt-1 text-[11px] font-mono ${
@@ -886,18 +1342,103 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                         </div>
                       )}
 
+                      {/* Expandable Inline Concise Explanation (Tafsir) */}
+                      {expandedTafsirAyah === ayah.numberInSurah && (
+                        <div className="mt-3.5 p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-stone-900/95 to-stone-950 border border-purple-500/35 shadow-xl text-left animate-slide-up space-y-3">
+                          <div className="flex items-center justify-between gap-2 border-b border-purple-500/20 pb-2">
+                            <div className="flex items-center gap-1.5">
+                              <BookOpen className="w-4 h-4 text-purple-400" />
+                              <span className="text-xs font-bold text-purple-200">
+                                Concise Explanation (Tafsir) • [{ayah.surahNumber || activeSurahNumber}:{ayah.numberInSurah}]
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenTafsir(ayah)}
+                                className="text-[11px] font-semibold text-purple-300 hover:text-white px-2.5 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 transition flex items-center gap-1 cursor-pointer"
+                                title="Open full scholarly commentary, Asbab al-Nuzul & practical takeaways"
+                              >
+                                <span>Full Details</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => setExpandedTafsirAyah(null)}
+                                className="p-1 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800 transition cursor-pointer"
+                                title="Close explanation"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {inlineTafsirMap[ayah.numberInSurah]?.loading ? (
+                            <div className="py-4 text-center space-y-2">
+                              <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto" />
+                              <p className="text-xs text-stone-300 font-medium">Consulting concise Quranic explanation...</p>
+                            </div>
+                          ) : inlineTafsirMap[ayah.numberInSurah]?.data ? (
+                            <div className="space-y-2.5">
+                              <p className="text-xs sm:text-sm text-stone-100 leading-relaxed font-normal">
+                                {inlineTafsirMap[ayah.numberInSurah].data?.conciseTafsir}
+                              </p>
+
+                              {inlineTafsirMap[ayah.numberInSurah].data?.practicalTakeaways && 
+                               inlineTafsirMap[ayah.numberInSurah].data!.practicalTakeaways.length > 0 && (
+                                <div className="pt-2 border-t border-white/5 space-y-1">
+                                  <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block">
+                                    Practical Takeaway:
+                                  </span>
+                                  <p className="text-xs text-stone-300 flex items-start gap-1.5">
+                                    <span className="text-emerald-400 mt-0.5">✦</span>
+                                    <span>{inlineTafsirMap[ayah.numberInSurah].data!.practicalTakeaways[0]}</span>
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-stone-400 py-1 flex items-center justify-between">
+                              <span>{inlineTafsirMap[ayah.numberInSurah]?.error || 'Failed to load explanation.'}</span>
+                              <button
+                                onClick={() => handleToggleInlineTafsir(ayah)}
+                                className="text-purple-300 hover:underline cursor-pointer"
+                              >
+                                Retry
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Concise Tafsir & Deeper Meaning action strip */}
-                      <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between gap-2">
+                      <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between gap-2 flex-wrap">
                         <button
-                          onClick={() => handleOpenTafsir(ayah)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 ${
-                            isThisAyahActive
+                          onClick={() => handleToggleInlineTafsir(ayah)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 cursor-pointer ${
+                            expandedTafsirAyah === ayah.numberInSurah
+                              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                              : isThisAyahActive
                               ? 'bg-purple-500/25 text-purple-200 border border-purple-400/40 hover:bg-purple-500/35 shadow-md shadow-purple-500/20'
-                              : 'bg-stone-900/80 text-stone-300 hover:text-white border border-stone-800 hover:border-purple-500/40'
+                              : paperTheme === 'cream' || paperTheme === 'warm'
+                              ? 'bg-purple-600/10 text-purple-950 hover:bg-purple-600/20 border border-purple-600/25'
+                              : 'bg-stone-900/80 text-purple-200 hover:text-white border border-purple-500/30 hover:border-purple-400/50'
                           }`}
                         >
-                          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                          <span>Tafsir & Deeper Meaning</span>
+                          <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+                          <span>View Tafsir</span>
+                          {expandedTafsirAyah === ayah.numberInSurah ? (
+                            <span className="text-[10px] bg-purple-800/80 px-1.5 py-0.5 rounded ml-1">Hide</span>
+                          ) : (
+                            <span className="text-[10px] text-purple-300 ml-0.5">(Concise Explanation)</span>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => handleOpenTafsir(ayah)}
+                          className="px-2.5 py-1 text-[11px] font-medium text-stone-400 hover:text-purple-300 transition flex items-center gap-1 cursor-pointer"
+                          title="Open full scholarly commentary & deeper reflection modal"
+                        >
+                          <span>Full Modal</span>
+                          <ExternalLink className="w-3 h-3 opacity-70" />
                         </button>
 
                         {isThisAyahActive && isRecitingNow && (
@@ -1150,21 +1691,96 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                 <span className="text-[11px] font-bold">Surah {activeSurahMeta.englishName} ({activeSurahMeta.numberOfAyahs} Ayahs)</span>
                 <span className="text-[11px]">Rub' {activeSurahMeta.juzStart * 4}</span>
               </div>
+
+              {/* Active Verse Urdu & English Translation Box (Mushaf Page View) */}
+              {(() => {
+                const activeAyah = currentPlayingAyah && (Number(currentPlayingAyah.surahNumber || activeSurahNumber) === Number(activeSurahNumber))
+                  ? (verses.find((v) => v.numberInSurah === currentPlayingAyah.numberInSurah) || currentPlayingAyah)
+                  : verses[0];
+                if (!activeAyah) return null;
+
+                return (
+                  <div className={`mt-4 p-3.5 rounded-2xl border text-xs animate-fade-in ${
+                    paperTheme === 'cream' || paperTheme === 'warm'
+                      ? 'bg-amber-500/10 border-amber-600/30 text-stone-900 shadow-sm'
+                      : paperTheme === 'night'
+                      ? 'bg-[#221c16] border-amber-500/40 text-stone-100 shadow-xl'
+                      : 'bg-stone-900/95 border-emerald-500/30 text-stone-100 shadow-xl'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2 font-mono text-[10px]">
+                      <span className={`font-bold ${paperTheme === 'night' ? 'text-amber-300' : 'text-emerald-400'}`}>
+                        {activeAyah.numberInSurah === 0 ? 'Opening Bismillah' : `Ayah ${activeAyah.numberInSurah} Translation`}
+                      </span>
+                      <button
+                        onClick={() => handleOpenTafsir(activeAyah)}
+                        className="px-2.5 py-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-400/40 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition active:scale-95"
+                        title="View concise explanation & Tafsir of this verse"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-purple-300" />
+                        <span>View Tafsir</span>
+                      </button>
+                    </div>
+
+                    {(translationLang === 'ur' || translationLang === 'both') && (
+                      <div dir="rtl" className={`font-nastaleeq text-base sm:text-lg mb-2 text-right leading-[2.3] ${
+                        paperTheme === 'cream' || paperTheme === 'warm'
+                          ? 'text-stone-950 font-bold'
+                          : 'text-amber-100 font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]'
+                      }`}>
+                        {activeAyah.urduTranslation || (activeAyah.numberInSurah === 0 ? "شروع الله کا نام لے کر جو بڑا مہربان نہایت رحم والا ہے" : "اردو ترجمہ دستیاب ہو رہا ہے...")}
+                      </div>
+                    )}
+
+                    {translationLang === 'both' && (
+                      <div className={`my-2 border-t ${
+                        paperTheme === 'cream' || paperTheme === 'warm'
+                          ? 'border-amber-900/15'
+                          : 'border-amber-400/20'
+                      }`} />
+                    )}
+
+                    {(translationLang === 'en' || translationLang === 'both') && (
+                      <div className={`text-xs sm:text-sm font-sans leading-relaxed ${
+                        paperTheme === 'cream' || paperTheme === 'warm'
+                          ? 'text-stone-800 font-medium'
+                          : 'text-stone-100 font-normal drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]'
+                      }`}>
+                        "{activeAyah.translation}"
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
       ) : (
         /* Surahs Directory Screen */
         <div className="space-y-4">
-          {/* Header Title */}
-          <div className="space-y-1 px-1">
-            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-emerald-400" />
-              <span>Holy Quran Mushaf</span>
-            </h1>
-            <p className="text-xs text-stone-400">
-              Full 114 Surahs with canonical text, audio streams, and offline download support.
-            </p>
+          {/* Header Title & Favorite Verses Quick Access */}
+          <div className="flex items-center justify-between gap-2 px-1">
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-emerald-400" />
+                <span>Holy Quran Mushaf</span>
+              </h1>
+              <p className="text-xs text-stone-400">
+                Full 114 Surahs with Arabic text, authentic Urdu & English translations, audio streams, and offline download support.
+              </p>
+            </div>
+            <button
+              onClick={() => setFavoritesModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 border border-amber-400/40 text-xs font-bold shrink-0 transition active:scale-95 shadow-lg shadow-amber-500/10 cursor-pointer"
+              title="View Favorite Verses"
+            >
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <span>Favorites</span>
+              {favoriteVerses.length > 0 && (
+                <span className="w-4 h-4 rounded-full bg-amber-400 text-stone-950 text-[10px] font-black flex items-center justify-center">
+                  {favoriteVerses.length}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Active Recitation Quick Jump Banner */}
@@ -1248,10 +1864,13 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Available offline" />
                         )}
                       </div>
-                      <div className="text-[10px] text-stone-400 flex items-center gap-1">
+                      <div className="text-[10px] text-stone-400 flex items-center gap-1.5 flex-wrap">
                         <span>{surah.englishNameTranslation}</span>
                         <span>•</span>
                         <span>{surah.numberOfAyahs} Ayahs</span>
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 font-sans border border-emerald-500/20">
+                          اردو ترجمہ
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1334,6 +1953,106 @@ export const ReaderTab: React.FC<ReaderTabProps> = ({
           Boolean(selectedTafsirAyah && verses.findIndex((v) => v.numberInSurah === selectedTafsirAyah.numberInSurah) < verses.length - 1)
         }
       />
+
+      {/* Floating Text Selection & Highlighting Toolbar */}
+      {selectionToolbar.position && selectionToolbar.associatedAyah && (
+        <TextSelectionToolbar
+          position={selectionToolbar.position}
+          selectedText={selectionToolbar.selectedText}
+          associatedAyah={selectionToolbar.associatedAyah}
+          isFavorite={favoriteVerses.some(
+            (f) =>
+              f.surahNumber === (selectionToolbar.associatedAyah?.surahNumber || activeSurahMeta?.number || 1) &&
+              f.ayahNumberInSurah === selectionToolbar.associatedAyah?.numberInSurah
+          )}
+          currentHighlightColor={
+            verseHighlights[
+              `${selectionToolbar.associatedAyah?.surahNumber || activeSurahMeta?.number || 1}:${selectionToolbar.associatedAyah?.numberInSurah}`
+            ]
+          }
+          onHighlight={(color) => {
+            if (selectionToolbar.associatedAyah) {
+              const surahNum = selectionToolbar.associatedAyah.surahNumber || activeSurahMeta?.number || 1;
+              handleSetAyahHighlight(surahNum, selectionToolbar.associatedAyah.numberInSurah, color);
+            }
+            setSelectionToolbar({ position: null, selectedText: '', associatedAyah: null });
+          }}
+          onClearHighlight={() => {
+            if (selectionToolbar.associatedAyah) {
+              const surahNum = selectionToolbar.associatedAyah.surahNumber || activeSurahMeta?.number || 1;
+              handleSetAyahHighlight(surahNum, selectionToolbar.associatedAyah.numberInSurah, undefined);
+            }
+            setSelectionToolbar({ position: null, selectedText: '', associatedAyah: null });
+          }}
+          onToggleFavorite={() => {
+            if (selectionToolbar.associatedAyah) {
+              handleToggleFavoriteAyah(selectionToolbar.associatedAyah);
+            }
+            setSelectionToolbar({ position: null, selectedText: '', associatedAyah: null });
+          }}
+          onCopyText={() => {
+            if (selectionToolbar.selectedText) {
+              navigator.clipboard?.writeText(selectionToolbar.selectedText);
+            }
+            setSelectionToolbar({ position: null, selectedText: '', associatedAyah: null });
+          }}
+          onViewTafsir={() => {
+            if (selectionToolbar.associatedAyah) {
+              handleToggleInlineTafsir(selectionToolbar.associatedAyah);
+            }
+            setSelectionToolbar({ position: null, selectedText: '', associatedAyah: null });
+          }}
+          onClose={() => setSelectionToolbar({ position: null, selectedText: '', associatedAyah: null })}
+        />
+      )}
+
+      {/* Favorite Verses Collection Modal */}
+      <FavoriteVersesModal
+        isOpen={favoritesModalOpen}
+        onClose={() => setFavoritesModalOpen(false)}
+        favorites={favoriteVerses}
+        onRemoveFavorite={(id) => {
+          const updated = StorageService.removeFavoriteVerse(id);
+          setFavoriteVerses(updated);
+        }}
+        onUpdateNote={(id, note) => {
+          const updated = StorageService.updateFavoriteNote(id, note);
+          setFavoriteVerses(updated);
+        }}
+        onSelectVerse={handleSelectFavoriteVerse}
+        onPlayAyah={onPlayAyah}
+        onOpenTafsir={handleOpenTafsir}
+        onSetHighlightColor={(surahNum, ayahNum, color) => {
+          handleSetAyahHighlight(surahNum, ayahNum, color);
+        }}
+      />
+
+      {/* Floating Focus Reading Mode Indicator & Quick Exit Pill */}
+      {focusReadingActive && (
+        <aside aria-label="Focus Reading Mode status" className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto animate-fade-in w-auto max-w-[94vw]">
+          <div className="flex items-center gap-2.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-stone-900/95 border border-emerald-500/50 text-white shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl text-xs font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="font-bold text-emerald-300">Focus Reading Active</span>
+              {activeSurahMeta ? (
+                <span className="text-stone-300 text-[11px] font-medium hidden xs:inline">
+                  • {activeSurahMeta.englishName} ({verses.length || activeSurahMeta.numberOfAyahs} Ayahs)
+                </span>
+              ) : (
+                <span className="text-stone-400 text-[11px] hidden sm:inline">• Navigation & Audio hidden</span>
+              )}
+            </div>
+            <button
+              onClick={() => handleToggleFocusReading(false)}
+              className="ml-1 px-3 py-1 rounded-full bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-black text-xs transition cursor-pointer flex items-center gap-1 shadow-md active:scale-95 shrink-0"
+              title="Exit Focus Reading Mode and restore bottom navigation and audio bars (Esc)"
+            >
+              <Minimize2 className="w-3.5 h-3.5" />
+              <span>Exit Focus</span>
+            </button>
+          </div>
+        </aside>
+      )}
     </div>
   );
 };

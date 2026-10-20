@@ -1,10 +1,12 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { 
   Play, 
   Pause, 
   SkipBack, 
   SkipForward, 
   Volume2, 
+  VolumeX,
+  Volume1,
   RotateCcw, 
   X, 
   ChevronUp, 
@@ -19,14 +21,20 @@ import {
   Lock,
   Smartphone,
   ShieldCheck,
-  BookOpen
+  BookOpen,
+  RefreshCw,
+  Minimize2,
+  Maximize2,
+  EyeOff,
+  Eye
 } from 'lucide-react';
 import { Ayah, Reciter } from '../types';
-import { RECITERS, getAyahAudioUrl } from '../data/quranData';
+import { RECITERS, getAyahAudioUrl, getAyahAudioFallbackUrls } from '../data/quranData';
 import { splitQuranWords, getWordTimings, getActiveWordIndex } from '../services/quranWordService';
 import { StorageService } from '../services/storageService';
 import { AudioWaveformAnalyzer } from './AudioWaveformAnalyzer';
 import { webAudioRecitation } from '../services/webAudioRecitationService';
+import { NotificationService } from '../services/notificationService';
 
 interface AudioPlayerBarProps {
   currentAyah: Ayah | null;
@@ -81,12 +89,41 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   const [showBackgroundInfo, setShowBackgroundInfo] = useState(false);
   const [isWakeLockOn, setIsWakeLockOn] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  // Default to hidden when reciting so the floating player never irritates or blocks the Quran text
+  const [isPlayerHidden, setIsPlayerHidden] = useState(true);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(false);
 
-  const audioSrc = currentAyah
-    ? getAyahAudioUrl(currentAyah.surahNumber, currentAyah.numberInSurah, selectedReciter)
-    : '';
+  // Auto-hide player whenever recitation starts or changes ayah
+  useEffect(() => {
+    if (isPlaying) {
+      setIsPlayerHidden(true);
+    }
+  }, [currentAyah?.numberInSurah, currentAyah?.surahNumber, isPlaying]);
+  
+  // Volume & audio hardware guarantee states
+  const [volume, setVolume] = useState<number>(1.0);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [streamSourceIndex, setStreamSourceIndex] = useState<number>(0);
+  const [testSoundPlaying, setTestSoundPlaying] = useState<boolean>(false);
+
+  // Multi-CDN Fallback URLs (EveryAyah -> Quran.com Cloudflare Edge -> QuranCDN -> Islamic Network)
+  const fallbackUrls = useMemo(() => {
+    if (!currentAyah) return [];
+    return getAyahAudioFallbackUrls(
+      currentAyah.surahNumber,
+      currentAyah.numberInSurah,
+      selectedReciter,
+      currentAyah.number
+    );
+  }, [currentAyah?.surahNumber, currentAyah?.numberInSurah, currentAyah?.number, selectedReciter]);
+
+  const currentStreamUrl = fallbackUrls[streamSourceIndex] || (
+    currentAyah ? getAyahAudioUrl(currentAyah.surahNumber, currentAyah.numberInSurah, selectedReciter) : ''
+  );
+
+  const audioSrc = currentStreamUrl;
 
   // Words breakdown and timing for current reciting verse
   const words = currentAyah ? splitQuranWords(currentAyah.text) : [];
@@ -146,83 +183,92 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
     }
   }, [externalSeekRatio, duration, isPlaying, playbackRate, onPlaybackProgress, onSeekHandled]);
 
-  // Handle Audio Source change with Web Audio API keepalive and Lock Screen metadata sync
+  // Synchronize audio volume and mute state to the audio element
   useEffect(() => {
-    if (!audioRef.current || !audioSrc || !currentAyah) return;
-
-    setUsingFallback(false);
-    audioRef.current.src = audioSrc;
-    audioRef.current.playbackRate = playbackRate;
-    audioRef.current.volume = 1.0;
-    audioRef.current.muted = false;
-    setAudioError(null);
-    setProgress(0);
-
-    // Initialize Web Audio Context and attach audio pipeline
-    webAudioRecitation.ensureAudioContext();
-    webAudioRecitation.attachAudioElement(audioRef.current);
-    webAudioRecitation.startKeepAlive();
-
-    // Synchronize Lock Screen metadata
-    webAudioRecitation.updateMediaSession({
-      title: currentAyah.numberInSurah === 0
-        ? `${surahName} • Opening Bismillah`
-        : `${surahName} • Ayah ${currentAyah.numberInSurah}`,
-      artist: `${selectedReciter.name} (${selectedReciter.subname})`,
-      album: 'The Noble Quran (القرآن الكريم)',
-      surahNumber: currentAyah.surahNumber,
-      ayahNumber: currentAyah.numberInSurah,
-    });
-
-    if (isPlaying) {
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            webAudioRecitation.syncPlaybackState(true, 0, audioRef.current?.duration || 0, playbackRate);
-          })
-          .catch((err) => {
-            console.warn("Autoplay blocked or network offline for audio", err);
-            setAudioError("Tap Play to start recitation");
-          });
-      }
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
+      audioRef.current.muted = isMuted;
     }
-  }, [audioSrc, selectedReciter, currentAyah?.surahNumber, currentAyah?.numberInSurah]);
+  }, [volume, isMuted]);
 
-  // Handle play/pause changes with Web Audio context state guarantee
+  // Reset stream source index on Ayah change
   useEffect(() => {
-    if (!audioRef.current) return;
+    setStreamSourceIndex(0);
+    setUsingFallback(false);
+  }, [currentAyah?.surahNumber, currentAyah?.numberInSurah]);
+
+  // Single unified audio playback & source sync controller
+  const prevSrcRef = useRef<string>('');
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentAyah) return;
+
+    audio.playbackRate = playbackRate;
+    audio.volume = isMuted ? 0 : volume;
+    audio.muted = isMuted;
+
+    // Check if audio source changed
+    const srcChanged = Boolean(audioSrc && audioSrc !== prevSrcRef.current);
+    if (srcChanged) {
+      prevSrcRef.current = audioSrc;
+      audio.src = audioSrc;
+      audio.load();
+      setProgress(0);
+      setAudioError(null);
+
+      // Initialize Web Audio Context and attach audio pipeline
+      webAudioRecitation.ensureAudioContext();
+      webAudioRecitation.attachAudioElement(audio);
+      webAudioRecitation.startKeepAlive();
+
+      // Synchronize Lock Screen metadata
+      webAudioRecitation.updateMediaSession({
+        title: currentAyah.numberInSurah === 0
+          ? `${surahName} • Opening Bismillah`
+          : `${surahName} • Ayah ${currentAyah.numberInSurah}`,
+        artist: `${selectedReciter.name} (${selectedReciter.subname})`,
+        album: 'The Noble Quran (القرآن الكريم)',
+        surahNumber: currentAyah.surahNumber,
+        ayahNumber: currentAyah.numberInSurah,
+      });
+    }
+
     if (isPlaying) {
       webAudioRecitation.ensureAudioContext();
       webAudioRecitation.startKeepAlive();
-      audioRef.current.volume = 1.0;
-      audioRef.current.muted = false;
-      const playPromise = audioRef.current.play();
+      
+      const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
+            setAudioError(null);
             webAudioRecitation.syncPlaybackState(
               true, 
-              audioRef.current?.currentTime || 0, 
-              audioRef.current?.duration || duration, 
+              audio.currentTime || 0, 
+              audio.duration || duration, 
               playbackRate
             );
           })
           .catch((err) => {
-            console.warn("Playback error:", err);
-            setAudioError("Tap Play to listen");
+            if (err.name === 'AbortError') {
+              // Ignore play interruption by next ayah/load
+              return;
+            }
+            console.warn("[Talawat Audio] Playback prevented by browser policy:", err);
+            setAudioError("Tap to Play Talawat");
           });
       }
     } else {
-      audioRef.current.pause();
+      audio.pause();
       webAudioRecitation.syncPlaybackState(
         false, 
-        audioRef.current.currentTime, 
-        audioRef.current.duration || duration, 
+        audio.currentTime || 0, 
+        audio.duration || duration, 
         playbackRate
       );
     }
-  }, [isPlaying]);
+  }, [audioSrc, isPlaying, playbackRate, isMuted, volume, currentAyah?.surahNumber, currentAyah?.numberInSurah, selectedReciter.id, surahName]);
 
   // High-frequency requestAnimationFrame loop while playing for buttery-smooth word synchronization
   useEffect(() => {
@@ -328,24 +374,149 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
   };
 
   const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
-    console.warn("Audio recitation load failed on primary stream:", e);
-    if (audioRef.current && currentAyah && !usingFallback && currentAyah.number) {
-      setUsingFallback(true);
-      const fallbackUrl = `https://cdn.islamic.network/quran/audio/128/${selectedReciter.identifier || 'ar.alafasy'}/${currentAyah.number}.mp3`;
-      audioRef.current.src = fallbackUrl;
-      audioRef.current.load();
-      if (isPlaying) {
-        audioRef.current.play().then(() => setAudioError(null)).catch((err) => {
-          console.warn("Fallback play error:", err);
-          setAudioError("Tap Play to retry recitation");
-        });
+    console.warn("Audio recitation load failed on current stream:", e);
+    if (audioRef.current && fallbackUrls.length > 0) {
+      const nextIndex = streamSourceIndex + 1;
+      if (nextIndex < fallbackUrls.length) {
+        console.log(`[Audio] Auto-switching to fallback CDN #${nextIndex}:`, fallbackUrls[nextIndex]);
+        setStreamSourceIndex(nextIndex);
+        setUsingFallback(true);
+        audioRef.current.src = fallbackUrls[nextIndex];
+        audioRef.current.load();
+        if (isPlaying) {
+          audioRef.current.play().then(() => setAudioError(null)).catch(() => {
+            setAudioError("Tap Play to resume recitation");
+          });
+        }
+        return;
       }
-      return;
     }
-    setAudioError("Unable to load recitation. Tap to retry.");
+    setAudioError("Audio stream paused. Tap Play to listen.");
   };
 
   if (!currentAyah) return null;
+
+  // Auto-hide the players when reciting starts to prevent irritating or obscuring the Surah
+  if (isPlayerHidden) {
+    return (
+      <>
+        <audio
+          ref={audioRef}
+          src={audioSrc}
+          preload="auto"
+          playsInline
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleTimeUpdate}
+          onEnded={handleEnded}
+          onPlay={() => {
+            setAudioError(null);
+            onPlayStateChange?.(true);
+          }}
+          onPause={() => onPlayStateChange?.(false)}
+          onError={handleAudioError}
+        />
+        {/* Discreet minimal floating indicator (Zero screen overlap, peaceful reading) */}
+        <div className="fixed bottom-20 right-3 z-40 animate-fade-in pointer-events-auto flex items-center gap-1.5 bg-stone-950/90 border border-emerald-500/40 rounded-full px-2.5 py-1 shadow-2xl backdrop-blur-xl">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePlay();
+            }}
+            className="w-5 h-5 rounded-full bg-emerald-500 text-stone-950 flex items-center justify-center font-bold active:scale-90 transition cursor-pointer shrink-0"
+            title={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? <Pause className="w-2.5 h-2.5 fill-current" /> : <Play className="w-2.5 h-2.5 fill-current translate-x-0.2" />}
+          </button>
+
+          <button
+            onClick={() => {
+              setIsPlayerHidden(false);
+              setIsMinimized(false);
+            }}
+            className="flex items-center gap-1.5 text-xs transition active:scale-95 cursor-pointer max-w-[140px] truncate"
+            title="Recitation active. Tap to expand player"
+          >
+            <span className="font-mono text-[10px] font-semibold text-emerald-300 truncate">
+              {currentAyah.numberInSurah === 0 ? 'Bismillah' : `Ayah ${currentAyah.numberInSurah}`}
+            </span>
+            <Eye className="w-3 h-3 text-stone-400 hover:text-white shrink-0" />
+          </button>
+
+          {onClose && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="p-0.5 rounded-full text-stone-500 hover:text-stone-300 transition shrink-0"
+              title="Stop recitation"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-18 left-0 right-0 z-40 px-3">
+        <audio
+          ref={audioRef}
+          src={audioSrc}
+          preload="auto"
+          playsInline
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleTimeUpdate}
+          onEnded={handleEnded}
+          onPlay={() => {
+            setAudioError(null);
+            onPlayStateChange?.(true);
+          }}
+          onPause={() => onPlayStateChange?.(false)}
+          onError={handleAudioError}
+        />
+        <div className="max-w-md mx-auto ios-glass-emerald rounded-full px-3 py-1.5 shadow-xl border border-emerald-500/40 flex items-center justify-between gap-2 backdrop-blur-xl animate-fade-in">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={onTogglePlay}
+              className="w-7 h-7 rounded-full bg-emerald-500 hover:bg-emerald-400 text-stone-950 flex items-center justify-center font-bold shadow-md shadow-emerald-500/30 active:scale-90 transition shrink-0"
+              title={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />}
+            </button>
+            <div className="truncate text-xs">
+              <span className="font-semibold text-white truncate block">
+                {currentAyah.numberInSurah === 0 ? `${surahName} • Bismillah` : `${surahName} • Ayah ${currentAyah.numberInSurah}`}
+              </span>
+              <span className="text-[10px] text-emerald-300 font-mono truncate block">
+                {selectedReciter.name.split(' ')[0]} • {formatTime(progress)} / {formatTime(duration)}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => setIsMinimized(false)}
+              className="p-1 rounded-lg text-stone-300 hover:text-white hover:bg-stone-800 transition"
+              title="Expand player"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-1 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800 transition"
+                title="Close recitation"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed bottom-18 left-0 right-0 z-40 px-3">
@@ -369,11 +540,39 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
         {/* Top bar: Info and expand toggle */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-emerald-900/60 border border-emerald-400/30 flex items-center justify-center shrink-0">
-              <Volume2 className={`w-4 h-4 ${isPlaying ? 'text-emerald-300 animate-pulse' : 'text-stone-400'}`} />
-            </div>
+            {/* Interactive Volume / Mute Toggle Button */}
+            <button
+              onClick={() => {
+                const nextMuted = !isMuted;
+                setIsMuted(nextMuted);
+                if (audioRef.current) {
+                  audioRef.current.muted = nextMuted;
+                  audioRef.current.volume = nextMuted ? 0 : volume;
+                }
+              }}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition active:scale-90 cursor-pointer ${
+                isMuted
+                  ? 'bg-amber-950/80 border-amber-500/50 text-amber-400 animate-pulse'
+                  : 'bg-emerald-900/60 border-emerald-400/30 text-emerald-300 hover:bg-emerald-800/60'
+              }`}
+              title={isMuted ? "Audio Muted - Tap to Unmute!" : `Volume ${Math.round(volume * 100)}% (Tap to Mute)`}
+              aria-label={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4 text-amber-400" />
+              ) : volume < 0.5 ? (
+                <Volume1 className="w-4 h-4 text-emerald-300" />
+              ) : (
+                <Volume2 className={`w-4 h-4 ${isPlaying ? 'text-emerald-300 animate-pulse' : 'text-stone-300'}`} />
+              )}
+            </button>
             <div className="truncate">
               <div className="flex items-center gap-1.5 flex-wrap">
+                {isMuted && (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-300 font-bold animate-pulse">
+                    MUTED
+                  </span>
+                )}
                 <span 
                   onClick={() => onNavigateToReader?.()}
                   className={`font-semibold text-xs text-white truncate ${onNavigateToReader ? 'hover:underline cursor-pointer' : ''}`}
@@ -453,9 +652,23 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
               <span>{playbackRate.toFixed(playbackRate % 1 === 0 ? 1 : 2)}x</span>
             </button>
             <button
+              onClick={() => setIsPlayerHidden(true)}
+              className="p-1.5 rounded-lg text-emerald-400 hover:text-white hover:bg-stone-800/60 transition"
+              title="Hide player (Recitation continues in background)"
+            >
+              <EyeOff className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setIsMinimized(true)}
+              className="p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800/60 transition"
+              title="Minimize player to thin pill"
+            >
+              <Minimize2 className="w-4 h-4" />
+            </button>
+            <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800/60 transition"
-              title="Expand player details"
+              title={isExpanded ? "Collapse player studio" : "Expand recitation studio"}
             >
               {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </button>
@@ -472,52 +685,84 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
 
         {/* Audio load / autoplay notification if error */}
         {audioError && (
-          <div className="mt-2 px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-between text-xs text-amber-200">
-            <span className="text-[11px] truncate">{audioError}</span>
+          <div className="mt-2 px-3 py-1.5 rounded-xl bg-emerald-950/90 border border-emerald-400/50 flex items-center justify-between text-xs text-emerald-200 shadow-lg animate-pulse">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
+              <span className="text-[11px] font-semibold text-white truncate">{audioError}</span>
+            </div>
             <button
               onClick={() => {
                 if (audioRef.current) {
-                  audioRef.current.load();
+                  webAudioRecitation.ensureAudioContext();
+                  audioRef.current.volume = 1.0;
+                  audioRef.current.muted = false;
+                  setIsMuted(false);
                   audioRef.current.play().then(() => setAudioError(null)).catch(() => {});
                 }
               }}
-              className="text-[11px] underline font-semibold text-amber-300 hover:text-white shrink-0 ml-2"
+              className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-stone-950 text-xs font-bold transition active:scale-95 shrink-0 shadow cursor-pointer ml-2"
             >
-              Retry
+              Play Now
             </button>
           </div>
         )}
 
-        {/* Dynamic Visual Audio Waveform Analyzer & Interactive Scrubber */}
-        <div className="mt-2">
-          <AudioWaveformAnalyzer
-            audioElement={audioRef.current}
-            isPlaying={isPlaying}
-            currentTime={progress}
-            duration={duration}
-            onSeek={handleWaveformSeek}
-            currentAyah={currentAyah}
-            activeWordIndex={activeWordIdx}
-            wordsCount={words.length}
-          />
-        </div>
-
-        {/* Live Active Word Recitation Spotlight Badge */}
-        {isPlaying && activeWord && (
-          <div dir="rtl" className="mt-2 px-2.5 py-1.5 rounded-xl bg-stone-900/80 border border-amber-400/30 flex items-center justify-between gap-2 shadow-inner rtl-flow">
-            <div className="flex items-center gap-2">
-              <span className="font-quran text-lg font-bold text-amber-200 drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]">
-                {activeWord}
-              </span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-mono">
-                Word {activeWordIdx + 1}/{words.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-amber-300 dir-ltr" dir="ltr">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              <span className="font-semibold tracking-wider">RTL RECITATION</span>
-            </div>
+        {/* Compact Mode Slim Scrubber Track (Never blocks the Surah) */}
+        {!isExpanded && (
+          <div className="mt-2 pt-1 border-t border-white/5 flex items-center gap-2">
+            <span className="text-[10px] font-mono text-stone-400 w-8 text-right shrink-0">
+              {formatTime(progress)}
+            </span>
+            <input
+              type="range"
+              min="0"
+              max={duration || 1}
+              step="0.05"
+              value={progress}
+              onChange={handleSeek}
+              className="flex-1 accent-emerald-500 cursor-pointer h-1 bg-stone-800 rounded-lg appearance-none"
+              aria-label="Seek Recitation"
+            />
+            <span className="text-[10px] font-mono text-stone-400 w-8 shrink-0">
+              {formatTime(duration)}
+            </span>
           </div>
+        )}
+
+        {/* Dynamic Visual Audio Waveform Analyzer & Interactive Scrubber (Expanded Studio Only) */}
+        {isExpanded && (
+          <>
+            <div className="mt-2">
+              <AudioWaveformAnalyzer
+                audioElement={audioRef.current}
+                isPlaying={isPlaying}
+                currentTime={progress}
+                duration={duration}
+                onSeek={handleWaveformSeek}
+                currentAyah={currentAyah}
+                activeWordIndex={activeWordIdx}
+                wordsCount={words.length}
+              />
+            </div>
+
+            {/* Live Active Word Recitation Spotlight Badge */}
+            {isPlaying && activeWord && (
+              <div dir="rtl" className="mt-2 px-2.5 py-1.5 rounded-xl bg-stone-900/80 border border-amber-400/30 flex items-center justify-between gap-2 shadow-inner rtl-flow">
+                <div className="flex items-center gap-2">
+                  <span className="font-quran text-lg font-bold text-amber-200 drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]">
+                    {activeWord}
+                  </span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-mono">
+                    Word {activeWordIdx + 1}/{words.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-amber-300 dir-ltr" dir="ltr">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                  <span className="font-semibold tracking-wider">RTL RECITATION</span>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Expanded options: Speed, Repeat, Reciter switcher & Word Timeline */}
@@ -667,6 +912,95 @@ export const AudioPlayerBar: React.FC<AudioPlayerBarProps> = ({
                   <RotateCcw className="w-3 h-3" />
                   <span>{repeatMode === 'one' ? '1x Ayah' : repeatMode === 'all' ? 'Continuous' : 'Once'}</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Speaker Output & Volume Control */}
+            <div className="p-2.5 rounded-xl bg-stone-950/75 border border-stone-800 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-1.5 text-stone-200 font-semibold">
+                  {isMuted ? <VolumeX className="w-3.5 h-3.5 text-amber-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
+                  <span>Speaker Output: {isMuted ? 'Muted' : `${Math.round(volume * 100)}%`}</span>
+                </div>
+                
+                {/* Instant Speaker Test Button */}
+                <button
+                  onClick={() => {
+                    setTestSoundPlaying(true);
+                    NotificationService.playAdhanTakbeer();
+                    setTimeout(() => setTestSoundPlaying(false), 2500);
+                  }}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-[10px] text-emerald-300 font-semibold active:scale-95 transition cursor-pointer"
+                  title="Play a test chime to verify device speakers and unblock audio"
+                >
+                  <Sparkles className="w-2.5 h-2.5 text-emerald-400" />
+                  <span>{testSoundPlaying ? 'Playing chime...' : 'Test Speakers'}</span>
+                </button>
+              </div>
+
+              {/* Volume Slider & Quick Preset Buttons */}
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  className={`p-1.5 rounded-lg border text-xs transition cursor-pointer ${
+                    isMuted 
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
+                      : 'bg-stone-900 text-stone-300 border-stone-700'
+                  }`}
+                  title={isMuted ? 'Unmute' : 'Mute'}
+                >
+                  {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                </button>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setVolume(val);
+                    if (isMuted && val > 0) setIsMuted(false);
+                  }}
+                  className="flex-1 accent-emerald-500 h-1.5 bg-stone-800 rounded-lg cursor-pointer"
+                  aria-label="Volume Slider"
+                />
+
+                <span className="text-[10px] font-mono text-stone-400 w-8 text-right">
+                  {isMuted ? '0%' : `${Math.round(volume * 100)}%`}
+                </span>
+              </div>
+
+              {/* CDN Stream Switcher */}
+              <div className="pt-1.5 border-t border-white/5 flex items-center justify-between text-[10px] flex-wrap gap-1">
+                <span className="text-stone-400">Audio Stream:</span>
+                <div className="flex items-center gap-1">
+                  {[
+                    { idx: 0, label: 'EveryAyah (Direct)' },
+                    { idx: 1, label: 'Quran.com CDN' },
+                    { idx: 3, label: 'Islamic Network' },
+                  ].map((stream) => (
+                    <button
+                      key={stream.idx}
+                      onClick={() => {
+                        setStreamSourceIndex(stream.idx);
+                        if (audioRef.current && fallbackUrls[stream.idx]) {
+                          audioRef.current.src = fallbackUrls[stream.idx];
+                          audioRef.current.load();
+                          if (isPlaying) audioRef.current.play().catch(() => {});
+                        }
+                      }}
+                      className={`px-2 py-0.5 rounded-md font-mono text-[9px] transition cursor-pointer ${
+                        streamSourceIndex === stream.idx
+                          ? 'bg-emerald-500 text-stone-950 font-bold'
+                          : 'bg-stone-900 text-stone-400 hover:text-stone-200 border border-stone-800'
+                      }`}
+                    >
+                      {stream.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

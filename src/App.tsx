@@ -23,7 +23,8 @@ import {
   SpiritualGoal, 
   ReadingReminder, 
   Reciter, 
-  DailyLog 
+  DailyLog,
+  GlobalUITheme 
 } from './types';
 import { StorageService } from './services/storageService';
 import { SURAHS_LIST, getSurahVerses, BISMILLAH_AYAH } from './data/quranData';
@@ -44,6 +45,18 @@ export default function App() {
   const [dailyLogs, setDailyLogs] = useState<DailyLog[]>(StorageService.getDailyLogs());
   const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
 
+  // Global UI Theme (Light Parchment vs Dark Night)
+  const [globalTheme, setGlobalTheme] = useState<GlobalUITheme>(() => StorageService.getGlobalUITheme());
+
+  const handleToggleGlobalTheme = (theme: GlobalUITheme) => {
+    setGlobalTheme(theme);
+    StorageService.saveGlobalUITheme(theme);
+  };
+
+  useEffect(() => {
+    StorageService.applyGlobalTheme(globalTheme);
+  }, [globalTheme]);
+
   // Audio Player State
   const [currentPlayingAyah, setCurrentPlayingAyah] = useState<Ayah | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -52,6 +65,14 @@ export default function App() {
   const [audioCurrentTime, setAudioCurrentTime] = useState<number>(0);
   const [audioDuration, setAudioDuration] = useState<number>(0);
   const [seekRatio, setSeekRatio] = useState<number | null>(null);
+
+  // Focus Reading Mode (hides navigation & audio bars for deep distraction-free recitation)
+  const [isFocusReadingMode, setIsFocusReadingMode] = useState<boolean>(() => StorageService.isFocusReadingMode());
+
+  const handleToggleFocusReadingMode = (enabled: boolean) => {
+    setIsFocusReadingMode(enabled);
+    StorageService.setFocusReadingMode(enabled);
+  };
 
   // Load initial stored values
   useEffect(() => {
@@ -230,35 +251,43 @@ export default function App() {
     minutesSaved: 36,
   };
 
+  const isFocusModeActive = isFocusReadingMode && currentTab === 'reader';
+
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+    <div className={`min-h-screen ${globalTheme === 'light' ? 'bg-[#fbf7ee] text-stone-900' : 'bg-stone-950 text-stone-100'} flex flex-col font-sans selection:bg-emerald-500 selection:text-white transition-colors duration-300`}>
       {/* iOS App Shell Container */}
-      <div className="w-full max-w-md mx-auto min-h-screen flex flex-col relative border-x border-stone-800/40 shadow-2xl bg-gradient-to-b from-stone-950 via-stone-900/50 to-stone-950">
+      <div className={`w-full max-w-md mx-auto min-h-screen flex flex-col relative border-x shadow-2xl transition-colors duration-300 ${
+        globalTheme === 'light'
+          ? 'border-amber-900/15 bg-gradient-to-b from-[#fbf7ee] via-[#f7f0e1] to-[#fbf7ee] text-stone-900'
+          : 'border-stone-800/40 bg-gradient-to-b from-stone-950 via-stone-900/50 to-stone-950 text-stone-100'
+      }`}>
         
-        {/* iOS Header & Status Bar */}
-        <Header
-          streak={streak.current}
-          bestStreak={streak.best}
-          isShieldActive={isShieldActive}
-          blockedApps={blockedApps}
-          isOffline={isOffline}
-          onOpenShieldTab={() => setCurrentTab('shield')}
-          onOpenTrackerTab={() => setCurrentTab('tracker')}
-          minutesReadToday={todayLog.minutesRead}
-          currentPlayingAyah={currentPlayingAyah}
-          isPlayingAudio={isPlayingAudio}
-          currentPlayingSurahName={currentPlayingSurahName}
-          onTogglePlayAudio={handleTogglePlayAudio}
-          onOpenReaderTab={() => setCurrentTab('reader')}
-          currentTab={currentTab}
-          onToggleShield={handleToggleShield}
-          onToggleAppLock={handleToggleAppLock}
-          onLockImmediately={handleLockImmediately}
-          onUnlockAllApps={handleUnlockAllApps}
-        />
+        {/* iOS Header & Status Bar (hidden in Focus Reading Mode for maximum reading immersion) */}
+        {!isFocusModeActive && (
+          <Header
+            streak={streak.current}
+            bestStreak={streak.best}
+            isShieldActive={isShieldActive}
+            blockedApps={blockedApps}
+            isOffline={isOffline}
+            onOpenShieldTab={() => setCurrentTab('shield')}
+            onOpenTrackerTab={() => setCurrentTab('tracker')}
+            minutesReadToday={todayLog.minutesRead}
+            currentPlayingAyah={currentPlayingAyah}
+            isPlayingAudio={isPlayingAudio}
+            currentPlayingSurahName={currentPlayingSurahName}
+            onTogglePlayAudio={handleTogglePlayAudio}
+            onOpenReaderTab={() => setCurrentTab('reader')}
+            currentTab={currentTab}
+            onToggleShield={handleToggleShield}
+            onToggleAppLock={handleToggleAppLock}
+            onLockImmediately={handleLockImmediately}
+            onUnlockAllApps={handleUnlockAllApps}
+          />
+        )}
 
         {/* Tab Content Body */}
-        <main className="flex-1 px-4 pt-3 pb-24 overflow-y-auto">
+        <main className={`flex-1 ${isFocusModeActive ? 'px-2.5 sm:px-4 pt-1.5 pb-6' : 'px-4 pt-3 pb-24'} overflow-y-auto transition-all duration-300`}>
           {currentTab === 'shield' && (
             <ShieldTab
               blockedApps={blockedApps}
@@ -304,6 +333,8 @@ export default function App() {
               audioCurrentTime={audioCurrentTime}
               audioDuration={audioDuration}
               onSeekWord={(ratio) => setSeekRatio(ratio)}
+              isFocusReadingMode={isFocusReadingMode}
+              onToggleFocusReadingMode={handleToggleFocusReadingMode}
             />
           )}
 
@@ -356,12 +387,14 @@ export default function App() {
               onChangeReciter={handleReciterChange}
               downloadedSurahsCount={downloadedSurahs.length}
               onDownloadAllEssential={handleDownloadAllEssential}
+              globalTheme={globalTheme}
+              onChangeGlobalTheme={handleToggleGlobalTheme}
             />
           )}
         </main>
 
-        {/* Sticky iOS Audio Player Bar if playing */}
-        {currentPlayingAyah && (
+        {/* Sticky iOS Audio Player Bar if playing (Hidden in Focus Reading Mode) */}
+        {currentPlayingAyah && !isFocusModeActive && (
           <AudioPlayerBar
             currentAyah={currentPlayingAyah}
             isPlaying={isPlayingAudio}
@@ -389,17 +422,19 @@ export default function App() {
           />
         )}
 
-        {/* iOS Frosted Bottom Navigation */}
-        <Navigation
-          currentTab={currentTab}
-          onSelectTab={(tab) => {
-            if (tab === currentTab) {
-              const mainEl = document.querySelector('main');
-              if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-            setCurrentTab(tab);
-          }}
-        />
+        {/* iOS Frosted Bottom Navigation (Hidden in Focus Reading Mode) */}
+        {!isFocusModeActive && (
+          <Navigation
+            currentTab={currentTab}
+            onSelectTab={(tab) => {
+              if (tab === currentTab) {
+                const mainEl = document.querySelector('main');
+                if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+              setCurrentTab(tab);
+            }}
+          />
+        )}
 
         {/* Interactive iOS App Blocker Modal (Quran Gatekeeper) */}
         {activeModalApp && (

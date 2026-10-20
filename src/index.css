@@ -4,6 +4,17 @@
   :root {
     --font-quran: 'Amiri Quran', 'Scheherazade New', 'Amiri', serif;
     --font-arabic: 'Scheherazade New', 'Amiri', serif;
+    --font-nastaleeq: 'Noori Nastaleeq', 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', 'Urdu Typesetting', serif;
+    --bg-app: #0c0a09;
+    --bg-shell: #120f0d;
+    --bg-card: rgba(28, 25, 23, 0.85);
+    --bg-card-hover: rgba(41, 37, 36, 0.9);
+    --text-primary: #f5f5f4;
+    --text-secondary: #a8a29e;
+    --text-muted: #78716c;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-card: rgba(255, 255, 255, 0.1);
+    --accent-glow: rgba(16, 185, 129, 0.15);
   }
 
   body {
@@ -12,7 +23,24 @@
     -moz-osx-font-smoothing: grayscale;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
+}
+
+@font-face {
+  font-family: 'Noori Nastaleeq';
+  src: url('https://cdn.jsdelivr.net/gh/abid-mujtaba/ttf-jameel-noori-nastaleeq@master/Jameel%20Noori%20Nastaleeq.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Jameel Noori Nastaleeq';
+  src: url('https://cdn.jsdelivr.net/gh/abid-mujtaba/ttf-jameel-noori-nastaleeq@master/Jameel%20Noori%20Nastaleeq.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
 .font-quran {
@@ -22,6 +50,94 @@
 
 .font-arabic {
   font-family: 'Scheherazade New', 'Amiri', serif;
+}
+
+.font-nastaleeq, .font-urdu, .font-noori-nastaleeq {
+  font-family: 'Noori Nastaleeq', 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', 'Urdu Typesetting', serif;
+  line-height: 2.3;
+  letter-spacing: 0;
+  word-spacing: 0.1em;
+}
+
+/* Dedicated high-readability translation card containers for night/dark and light modes */
+.translation-box-night {
+  background-color: rgba(18, 15, 12, 0.92);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+.translation-box-light {
+  background-color: rgba(180, 140, 90, 0.08);
+  border: 1px solid rgba(180, 140, 90, 0.22);
+  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.04), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+/* Quran Text Selection & User Selectable Verses */
+.quran-selectable, .select-text, [data-ayah-selectable="true"] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+.quran-selectable::selection, .select-text::selection, [data-ayah-selectable="true"]::selection {
+  background-color: rgba(251, 191, 36, 0.45);
+  color: #ffffff;
+}
+
+/* Luminous Verse Highlights for Night Mode */
+.ayah-highlight-amber {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.08)) !important;
+  border-color: rgba(245, 158, 11, 0.55) !important;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.15), inset 0 0 15px rgba(245, 158, 11, 0.08) !important;
+}
+
+.ayah-highlight-emerald {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(5, 150, 105, 0.08)) !important;
+  border-color: rgba(16, 185, 129, 0.55) !important;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.15), inset 0 0 15px rgba(16, 185, 129, 0.08) !important;
+}
+
+.ayah-highlight-rose {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.18), rgba(225, 29, 72, 0.08)) !important;
+  border-color: rgba(244, 63, 94, 0.55) !important;
+  box-shadow: 0 0 25px rgba(244, 63, 94, 0.15), inset 0 0 15px rgba(244, 63, 94, 0.08) !important;
+}
+
+.ayah-highlight-sky {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(2, 132, 199, 0.08)) !important;
+  border-color: rgba(14, 165, 233, 0.55) !important;
+  box-shadow: 0 0 25px rgba(14, 165, 233, 0.15), inset 0 0 15px rgba(14, 165, 233, 0.08) !important;
+}
+
+.ayah-highlight-purple {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(147, 51, 234, 0.08)) !important;
+  border-color: rgba(168, 85, 247, 0.55) !important;
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.15), inset 0 0 15px rgba(168, 85, 247, 0.08) !important;
+}
+
+/* Light Parchment Highlighting Variations (Cream / Warm) */
+.parchment-highlight-amber {
+  background: rgba(245, 158, 11, 0.22) !important;
+  border-color: rgba(180, 83, 9, 0.6) !important;
+}
+
+.parchment-highlight-emerald {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: rgba(4, 120, 87, 0.6) !important;
+}
+
+.parchment-highlight-rose {
+  background: rgba(244, 63, 94, 0.2) !important;
+  border-color: rgba(190, 18, 60, 0.6) !important;
+}
+
+.parchment-highlight-sky {
+  background: rgba(14, 165, 233, 0.22) !important;
+  border-color: rgba(3, 105, 161, 0.6) !important;
+}
+
+.parchment-highlight-purple {
+  background: rgba(168, 85, 247, 0.22) !important;
+  border-color: rgba(126, 34, 206, 0.6) !important;
 }
 
 /* Authentic Quran Right-to-Left (RTL) reading & recitation flow */
@@ -187,4 +303,124 @@
   border: 1px solid rgba(180, 130, 60, 0.3);
   pointer-events: none;
   border-radius: inherit;
+}
+
+/* =========================================================================
+   Global UI Themes: Light (Parchment) & Dark (Night)
+   ========================================================================= */
+
+body.theme-light,
+body.theme-parchment {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+}
+
+body.theme-dark {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+}
+
+/* Light Parchment Glass & Card Styles */
+body.theme-light .ios-glass,
+body.theme-parchment .ios-glass {
+  background: rgba(255, 252, 245, 0.92) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(180, 140, 80, 0.28) !important;
+  box-shadow: 0 4px 20px -2px rgba(180, 140, 80, 0.12) !important;
+}
+
+body.theme-light .ios-glass-card,
+body.theme-parchment .ios-glass-card {
+  background: rgba(255, 253, 248, 0.95) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(180, 140, 80, 0.24) !important;
+  box-shadow: 0 4px 16px -2px rgba(180, 140, 80, 0.08) !important;
+}
+
+/* Typography & Text hierarchy in Light Parchment Theme */
+body.theme-light h1,
+body.theme-light h2,
+body.theme-light h3,
+body.theme-light h4,
+body.theme-light .text-white,
+body.theme-parchment h1,
+body.theme-parchment h2,
+body.theme-parchment h3,
+body.theme-parchment h4,
+body.theme-parchment .text-white {
+  color: #1c1917 !important;
+}
+
+body.theme-light .text-stone-100,
+body.theme-parchment .text-stone-100 {
+  color: #1c1917 !important;
+}
+
+body.theme-light .text-stone-200,
+body.theme-parchment .text-stone-200 {
+  color: #292524 !important;
+}
+
+body.theme-light .text-stone-300,
+body.theme-parchment .text-stone-300 {
+  color: #44403c !important;
+}
+
+body.theme-light .text-stone-400,
+body.theme-parchment .text-stone-400 {
+  color: #57534e !important;
+}
+
+body.theme-light .text-stone-500,
+body.theme-parchment .text-stone-500 {
+  color: #78716c !important;
+}
+
+/* Surface backgrounds in Light Parchment Theme */
+body.theme-light .bg-stone-900,
+body.theme-light .bg-stone-900\/50,
+body.theme-light .bg-stone-900\/60,
+body.theme-light .bg-stone-900\/70,
+body.theme-light .bg-stone-900\/80,
+body.theme-parchment .bg-stone-900,
+body.theme-parchment .bg-stone-900\/50,
+body.theme-parchment .bg-stone-900\/60,
+body.theme-parchment .bg-stone-900\/70,
+body.theme-parchment .bg-stone-900\/80 {
+  background-color: rgba(244, 235, 217, 0.85) !important;
+}
+
+body.theme-light .bg-stone-800,
+body.theme-light .bg-stone-800\/60,
+body.theme-light .bg-stone-800\/80,
+body.theme-parchment .bg-stone-800,
+body.theme-parchment .bg-stone-800\/60,
+body.theme-parchment .bg-stone-800\/80 {
+  background-color: rgba(230, 218, 195, 0.75) !important;
+}
+
+body.theme-light .border-stone-800,
+body.theme-light .border-stone-800\/40,
+body.theme-light .border-stone-700,
+body.theme-light .border-stone-700\/60,
+body.theme-light .border-stone-700\/80,
+body.theme-parchment .border-stone-800,
+body.theme-parchment .border-stone-800\/40,
+body.theme-parchment .border-stone-700,
+body.theme-parchment .border-stone-700\/60,
+body.theme-parchment .border-stone-700\/80 {
+  border-color: rgba(180, 140, 80, 0.22) !important;
+}
+
+/* Custom scrollbars for light mode */
+body.theme-light ::-webkit-scrollbar-thumb,
+body.theme-parchment ::-webkit-scrollbar-thumb {
+  background: rgba(180, 140, 80, 0.3);
+}
+
+body.theme-light ::-webkit-scrollbar-thumb:hover,
+body.theme-parchment ::-webkit-scrollbar-thumb:hover {
+  background: rgba(180, 140, 80, 0.45);
 }

@@ -175,13 +175,13 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Persistent Recitation Pill when navigating away from ReaderTab */}
-        {currentPlayingAyah && currentTab !== 'reader' && (
+        {/* Persistent Recitation Pill in Header (Non-intrusive, zero reading obstruction) */}
+        {currentPlayingAyah && (
           <div className="max-w-md mx-auto mt-2 pt-2 border-t border-emerald-500/20 flex items-center justify-between gap-2 text-xs animate-fade-in">
             <button
               onClick={onOpenReaderTab}
               className="flex items-center gap-2 min-w-0 text-left hover:opacity-90 transition cursor-pointer"
-              title="Quran recitation active in background. Tap to return to Mushaf"
+              title="Quran recitation active. Tap to view current verse"
             >
               <span className="relative flex h-2 w-2 shrink-0">
                 {isPlayingAudio && (
@@ -191,10 +191,10 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
               <div className="truncate flex items-center gap-1.5">
                 <span className="text-[11px] font-semibold text-emerald-300 truncate">
-                  Now Reciting: {currentPlayingSurahName} • {currentPlayingAyah.numberInSurah === 0 ? 'Opening Bismillah' : `Ayah ${currentPlayingAyah.numberInSurah}`}
+                  {currentPlayingSurahName} • {currentPlayingAyah.numberInSurah === 0 ? 'Opening Bismillah' : `Ayah ${currentPlayingAyah.numberInSurah}`}
                 </span>
                 <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-200 font-mono shrink-0">
-                  Web Audio
+                  Talawat
                 </span>
               </div>
             </button>
@@ -202,13 +202,13 @@ export const Header: React.FC<HeaderProps> = ({
               {onTogglePlayAudio && (
                 <button
                   onClick={onTogglePlayAudio}
-                  className="w-6 h-6 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 flex items-center justify-center active:scale-90 transition"
+                  className="w-6 h-6 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 flex items-center justify-center active:scale-90 transition cursor-pointer"
                   title={isPlayingAudio ? 'Pause recitation' : 'Play recitation'}
                 >
                   {isPlayingAudio ? <Pause className="w-3 h-3 fill-current" /> : <Play className="w-3 h-3 fill-current translate-x-0.5" />}
                 </button>
               )}
-              {onOpenReaderTab && (
+              {currentTab !== 'reader' && onOpenReaderTab && (
                 <button
                   onClick={onOpenReaderTab}
                   className="text-[10px] text-emerald-400 hover:text-emerald-300 font-medium underline flex items-center gap-0.5 ml-1"

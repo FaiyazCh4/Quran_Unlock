@@ -186,8 +186,14 @@ export const AppBlockerModal: React.FC<AppBlockerModalProps> = ({
             </p>
           </div>
 
-          {/* Translation */}
-          <div className="pt-2 text-stone-300 text-xs leading-relaxed text-center border-t border-stone-800/60 italic font-light">
+          {/* Translation: Urdu and English */}
+          {currentAyah.urduTranslation && (
+            <div dir="rtl" className="pt-2 text-base text-amber-200 text-center border-t border-stone-800/60 font-nastaleeq leading-[2.3] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              {currentAyah.urduTranslation}
+            </div>
+          )}
+
+          <div className={`pt-2 text-stone-100 text-xs sm:text-sm leading-relaxed text-center ${currentAyah.urduTranslation ? 'mt-1' : 'border-t border-stone-800/60'} font-sans`}>
             "{currentAyah.translation}"
           </div>
 
