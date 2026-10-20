@@ -66,6 +66,16 @@ export default function App() {
   const [audioDuration, setAudioDuration] = useState<number>(0);
   const [seekRatio, setSeekRatio] = useState<number | null>(null);
 
+  // In-app simulation toast notification (replaces window.alert for iframe compatibility)
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((curr) => (curr === msg ? null : curr));
+    }, 3200);
+  };
+
   // Focus Reading Mode (hides navigation & audio bars for deep distraction-free recitation)
   const [isFocusReadingMode, setIsFocusReadingMode] = useState<boolean>(() => StorageService.isFocusReadingMode());
 
@@ -124,12 +134,12 @@ export default function App() {
 
   const handleLaunchApp = (app: BlockedApp) => {
     if (!isShieldActive) {
-      alert(`[Simulation] ${app.name} opened directly (Shield is paused).`);
+      showToast(`[Simulation] ${app.name} opened directly (Shield is paused).`);
       return;
     }
     const isTempUnlocked = app.unlockedUntil && app.unlockedUntil > Date.now();
     if (isTempUnlocked) {
-      alert(`[Simulation] ${app.name} is unlocked! You have uninterrupted access.`);
+      showToast(`[Simulation] ${app.name} is unlocked! You have uninterrupted access.`);
       return;
     }
     // Launch the signature Quran Gatekeeper screen
@@ -447,6 +457,16 @@ export default function App() {
               setCurrentTab('reader');
             }}
           />
+        )}
+
+        {/* Floating App Notification Toast (non-blocking for iframe compatibility) */}
+        {toastMessage && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-xs w-[90%] pointer-events-none transition-all">
+            <div className="ios-glass-card rounded-2xl p-3 border border-emerald-500/40 shadow-2xl flex items-center gap-2.5 text-xs text-white backdrop-blur-xl">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-ping" />
+              <p className="flex-1 font-medium">{toastMessage}</p>
+            </div>
+          </div>
         )}
       </div>
     </div>
