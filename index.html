@@ -3,6 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <script>
+      // Suppress Vite HMR WebSocket connection errors in iFrame sandbox environment
+      window.addEventListener('unhandledrejection', function (e) {
+        if (
+          e.reason &&
+          (String(e.reason).includes('WebSocket') ||
+            (e.reason.message && e.reason.message.includes('WebSocket')) ||
+            (e.reason.stack && e.reason.stack.includes('@vite/client')))
+        ) {
+          e.preventDefault();
+        }
+      });
+      window.addEventListener('error', function (e) {
+        if (e.message && e.message.includes('WebSocket')) {
+          e.preventDefault();
+        }
+      });
+    </script>
     <title>Quran Unlock - Spiritual Focus & App Locker</title>
     <meta name="description" content="Transform screen time into Quran time. Lock distracting apps until your daily Quran reading goal is met, with offline audio recitations, Reels mode, daily reminders, and spiritual goal tracker." />
     <meta property="og:title" content="Quran Unlock - Spiritual Focus & App Locker" />

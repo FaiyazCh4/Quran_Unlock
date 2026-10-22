@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const port = Number(process.env.PORT) || 3000;
+  const port = 3000;
 
   app.use(express.json());
 
@@ -167,7 +167,10 @@ Provide a concise, scholarly, and deeply inspiring Tafsir and reflection for thi
   } else {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { 
+        middlewareMode: true,
+        hmr: false,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
